@@ -1,6 +1,5 @@
 use std::fs;
 
-
 // followed this
 // https://www.youtube.com/watch?v=bkvSRfgDG-E&ab_channel=chrisbiscardi
 // edited it after to get the alternate versions
