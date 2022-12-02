@@ -12,7 +12,7 @@ fn score_from_strategy_guide(input: &str) -> u32 {
 
     let mut score = 0;
     for round in rounds {
-        let choices: Vec<&str> = round.split(" ").filter(|x| !x.is_empty()).collect();
+        let choices: Vec<&str> = round.split(' ').filter(|x| !x.is_empty()).collect();
         // choices[0] = A, B, or C
         // choices[1] = X, Y, or Z
         let opponent = get_variant(choices[0]);
@@ -31,15 +31,14 @@ fn score_from_strategy_guide(input: &str) -> u32 {
 
 fn score_from_strategy_guide_part_2(input: &str) -> u32 {
     // strategy guide part 2 reveals x, y, z is the outcome you need to get
-
     let rounds: Vec<&str> = input.lines().collect();
 
     let mut score = 0;
     for round in rounds {
-        let choices: Vec<&str> = round.split(" ").filter(|x| !x.is_empty()).collect();
+        let choices: Vec<&str> = round.split(' ').filter(|x| !x.is_empty()).collect();
         // choices[0] = A, B, or C
         // choices[1] = X, Y, or Z
-        let opponent = get_variant(choices[0]);
+        let opponent = get_variant_part_2(choices[0]);
         let intended_outcome = get_intended_outcome(choices[1]);
         let my_choice = get_choice(opponent, intended_outcome);
 
@@ -54,7 +53,7 @@ fn score_from_strategy_guide_part_2(input: &str) -> u32 {
     score
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 enum RPS {
     Rock,
     Paper,
@@ -70,41 +69,42 @@ enum Outcome {
 
 fn get_variant(letter: &str) -> RPS {
     if letter.contains(['A', 'X']) {
-        return RPS::Rock;
+        RPS::Rock
     } else if letter.contains(['B', 'Y']) {
-        return RPS::Paper;
+        RPS::Paper
     } else if letter.contains(['C', 'Z']) {
-        return RPS::Scissors;
+        RPS::Scissors
     } else {
         //error
         dbg!(letter);
+        panic!("Expected A,B,C,X,Y, or Z");
         // the error was test input had spaces in front of letters
         // "A, X"
         // "    B, Y"
         // "    C, Z"
-        return RPS::Scissors;
+        // RPS::Scissors
     }
 }
 
 fn get_variant_part_2(letter: &str) -> RPS {
     if letter.contains('A') {
-        return RPS::Rock;
+        RPS::Rock
     } else if letter.contains('B') {
-        return RPS::Paper;
+        RPS::Paper
     } else {
         // if letter.contains('C')
-        return RPS::Scissors;
+        RPS::Scissors
     }
 }
 
 fn get_intended_outcome(letter: &str) -> Outcome {
     if letter.contains('X') {
-        return Outcome::Lose;
+        Outcome::Lose
     } else if letter.contains('Y') {
-        return Outcome::Draw;
+        Outcome::Draw
     } else {
         // if letter.contains('C')
-        return Outcome::Win;
+        Outcome::Win
     }
 }
 
@@ -117,22 +117,37 @@ fn get_point_value(selection: RPS) -> u32 {
 }
 
 fn get_outcome(a: RPS, b: RPS) -> Outcome {
-    match a {
-        RPS::Rock => match b {
-            RPS::Rock => Outcome::Draw,
-            RPS::Paper => Outcome::Lose,
-            RPS::Scissors => Outcome::Win,
-        },
-        RPS::Paper => match b {
-            RPS::Rock => Outcome::Win,
-            RPS::Paper => Outcome::Draw,
-            RPS::Scissors => Outcome::Lose,
-        },
-        RPS::Scissors => match b {
-            RPS::Rock => Outcome::Lose,
-            RPS::Paper => Outcome::Win,
-            RPS::Scissors => Outcome::Draw,
-        },
+    // match a {
+    //     RPS::Rock => match b {
+    //         RPS::Rock => Outcome::Draw,
+    //         RPS::Paper => Outcome::Lose,
+    //         RPS::Scissors => Outcome::Win,
+    //     },
+    //     RPS::Paper => match b {
+    //         RPS::Rock => Outcome::Win,
+    //         RPS::Paper => Outcome::Draw,
+    //         RPS::Scissors => Outcome::Lose,
+    //     },
+    //     RPS::Scissors => match b {
+    //         RPS::Rock => Outcome::Lose,
+    //         RPS::Paper => Outcome::Win,
+    //         RPS::Scissors => Outcome::Draw,
+    //     },
+    // }
+
+    // this is maybe more readable
+    match (a, b) {
+        // the 3 win permutations
+        (RPS::Rock, RPS::Scissors) | (RPS::Paper, RPS::Rock) | (RPS::Scissors, RPS::Paper) => {
+            Outcome::Win
+        }
+        (a, b) => {
+            if a == b {
+                Outcome::Draw
+            } else {
+                Outcome::Lose
+            }
+        }
     }
 }
 
@@ -152,12 +167,10 @@ fn get_choice(opp_selection: RPS, outcome: Outcome) -> RPS {
             RPS::Scissors => RPS::Rock,
         },
         Outcome::Draw => opp_selection,
-        Outcome::Lose => {
-            match opp_selection {
-                RPS::Rock => RPS::Scissors,
-                RPS::Paper => RPS::Rock,
-                RPS::Scissors => RPS::Paper,
-            }
+        Outcome::Lose => match opp_selection {
+            RPS::Rock => RPS::Scissors,
+            RPS::Paper => RPS::Rock,
+            RPS::Scissors => RPS::Paper,
         },
     }
 }
