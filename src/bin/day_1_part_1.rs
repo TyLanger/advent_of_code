@@ -1,5 +1,10 @@
 use std::fs;
 
+
+// followed this
+// https://www.youtube.com/watch?v=bkvSRfgDG-E&ab_channel=chrisbiscardi
+// edited it after to get the alternate versions
+
 // run with cargo run --bin day_1_part_1
 fn main() {
     let file = fs::read_to_string("./inputs/day_01_input.txt").unwrap();
