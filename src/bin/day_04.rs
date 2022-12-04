@@ -21,9 +21,8 @@ fn part_1(input: &str) -> u32 {
 }
 
 fn get_points_part1(left_pair: PairRange, right_pair: PairRange) -> u32 {
-    u32::from(
-        left_pair.pair_fully_contains(&right_pair) || right_pair.pair_fully_contains(&left_pair),
-    )
+    (left_pair.pair_fully_contains(&right_pair) || right_pair.pair_fully_contains(&left_pair))
+        as u32
 }
 
 fn part_2(input: &str) -> u32 {
@@ -40,17 +39,7 @@ fn part_2(input: &str) -> u32 {
 }
 
 fn get_points_part2(left_pair: PairRange, right_pair: PairRange) -> u32 {
-    // is a pair less than another
-    // less than is 1-3 < 4-6
-    // max of a is < the min of b
-    // 4-6, 1-3 also counts. (the second check is checking the other order)
-    // if either is smaller, they don't overlap
-    // so if neither pass, they overlap somewhat
-    // given: 3-7, 4-8
-    // 3-7 < 4-8 false
-    // 4-8 < 3-7 false
-
-    u32::from(!(left_pair.pair_less_than(&right_pair) || right_pair.pair_less_than(&left_pair)))
+    left_pair.some_overlap(&right_pair) as u32
 }
 
 fn get_pairs(line: &str) -> (PairRange, PairRange) {
@@ -95,6 +84,19 @@ impl PairRange {
 
     fn pair_less_than(&self, other: &PairRange) -> bool {
         self.end < other.start
+    }
+
+    fn some_overlap(&self, other: &PairRange) -> bool {
+        // is a pair less than another
+        // less than is 1-3 < 4-6
+        // max of a is < the min of b
+        // 4-6, 1-3 also counts. (the second check is checking the other order)
+        // if either is smaller, they don't overlap
+        // so if neither pass, they overlap somewhat
+        // given: 3-7, 4-8
+        // 3-7 < 4-8 false
+        // 4-8 < 3-7 false
+        !(self.pair_less_than(other) || other.pair_less_than(self))
     }
 }
 
