@@ -4,7 +4,7 @@ fn main() {
     // remember to change the input
     let file = fs::read_to_string("./inputs/day_05_input.txt").unwrap();
     println!("{}", part_1(&file));
-    // println!("{}", part_2(&file));
+    println!("{}", part_2(&file));
 }
 
 fn part_1(input: &str) -> String {
@@ -32,6 +32,35 @@ fn part_1(input: &str) -> String {
     process_stacks(&mut stacks, instructions.unwrap().1);
 
     get_top_of_each_stack(stacks)
+}
+
+fn part_2(input: &str) -> String {
+
+    // get initial state
+    // calculate all the moves
+    // get the top of each stack
+    // return the tops.
+
+    let num_stacks = get_number_of_stacks(&input);
+    let mut stacks = Vec::new();
+    for _ in 0..num_stacks {
+        let stack: Vec<String> = Vec::new();
+        stacks.push(stack);
+    }
+
+    // create the starting stacks
+    let start_stack_input: Vec<&str> = input.split('1').collect();
+
+    setup_stacks(&mut stacks, start_stack_input[0]);
+    // println!("{:?}", stacks);
+
+    let instructions = input.split_once(&num_stacks.to_string());
+    // split at the end of stack labels
+
+    process_stacks_part_2(&mut stacks, instructions.unwrap().1);
+
+    get_top_of_each_stack(stacks)
+
 }
 
 fn get_number_of_stacks(input: &str) -> u32 {
@@ -100,6 +129,35 @@ fn process_stacks(stacks: &mut Vec<Vec<String>>, input: &str) {
         for _ in 0..inst.amount {
             let popped = stacks[inst.start - 1].pop();
             stacks[inst.dest - 1].push(popped.unwrap());
+        }
+    }
+}
+
+fn process_stacks_part_2(stacks: &mut Vec<Vec<String>>, input: &str) {
+
+    // \n\r\n\r
+    // move 1 from 2 to 1
+    // move 3 from 1 to 3
+    // ..
+
+    // part 2:
+    // can now move a whole stack at once
+    // put into a temp stack
+
+    let lines = input.lines();
+    // skip the blank line
+    for line in lines.skip(2) {
+        let inst = Instruction::from_string(line);
+
+        let mut temp_stack = Vec::new();
+        for _ in 0..inst.amount {
+            let popped = stacks[inst.start - 1].pop();
+            temp_stack.push(popped);
+        }
+
+        for _ in 0..temp_stack.len() {
+            let popped = temp_stack.pop();
+            stacks[inst.dest - 1].push(popped.unwrap().unwrap());
         }
     }
 }
@@ -200,11 +258,10 @@ move 1 from 1 to 2";
         assert_eq!(3, inst.dest);
     }
 
-    // #[test]
-    // #[ignore = "not ready"]
-    // fn part_2_works() {
-    //     let result = part_2(&DAY_5_BASIC_INPUT);
+    #[test]
+    fn part_2_works() {
+        let result = part_2(&DAY_5_BASIC_INPUT);
 
-    //     assert_eq!(4, result);
-    // }
+        assert_eq!("MCD".to_string(), result);
+    }
 }
