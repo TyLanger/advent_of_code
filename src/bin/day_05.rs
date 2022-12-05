@@ -21,16 +21,10 @@ fn part_1(input: &str) -> String {
     }
 
     // create the starting stacks
-    let start_stack_input: Vec<&str> = input.split('1').collect();
+    setup_stacks(&mut stacks, input);
 
-    setup_stacks(&mut stacks, start_stack_input[0]);
-
-    let instructions = input.split_once(&num_stacks.to_string());
-    // split at the end of stack labels (3 or 9)
-    // it actually doesn't matter. Could've been 1 bc I am skipping
-    // that line anyway
-
-    process_stacks(&mut stacks, instructions.unwrap().1);
+    // process the instructions on the stacks
+    process_stacks(&mut stacks, input);
 
     get_top_of_each_stack(stacks)
 }
@@ -49,15 +43,11 @@ fn part_2(input: &str) -> String {
     }
 
     // create the starting stacks
-    let start_stack_input: Vec<&str> = input.split('1').collect();
+    setup_stacks(&mut stacks, input);
 
-    setup_stacks(&mut stacks, start_stack_input[0]);
-
-    let instructions = input.split_once(&num_stacks.to_string());
-    // split at the end of stack labels
-
+    // process the instructions on the stacks
     // only part that is different from part 1
-    process_stacks_part_2(&mut stacks, instructions.unwrap().1);
+    process_stacks_part_2(&mut stacks, input);
 
     get_top_of_each_stack(stacks)
 }
@@ -71,6 +61,7 @@ fn get_number_of_stacks(input: &str) -> u32 {
     let number_split = input.split_once('1');
     // split into lines to get the whole line
     let lines: Vec<&str> = number_split.unwrap().1.lines().collect();
+    // get only the line with the stack labels (other lines are the instructions)
     // split into a vec of each number
     let all_nums: Vec<&str> = lines[0].split_whitespace().collect();
     // grab the last number (the number of stacks)
@@ -78,15 +69,18 @@ fn get_number_of_stacks(input: &str) -> u32 {
 }
 
 fn setup_stacks(stacks: &mut [Vec<String>], input: &str) {
-    // need to start at the bottom
-    let lines = input.lines();
     // split at 1 in the line below.
+    let start_stack_input: Vec<&str> = input.split('1').collect();
+    let lines = start_stack_input[0].lines();
+
+    // need to start at the bottom
     // skip the line that is the few spaces in front of the 1
     for line in lines.rev().skip(1) {
         // input has consistent spacing
         // check if there is a letter at position 1, 5, 9, etc.
         // if it exists, push it into that stack
         let individual_chars: Vec<&str> = line.split("").collect();
+        // offset is 2, not 1 bc of the blank char at the start when splitting on ""
         let mut letter_offset = 2;
         for stack in stacks.iter_mut() {
             if letter_offset >= individual_chars.len() {
@@ -108,11 +102,13 @@ fn process_stacks(stacks: &mut [Vec<String>], input: &str) {
     // move 3 from 1 to 3
     // ..
 
-    let lines = input.lines();
+    let instructions = input.split_once('1');
     // skip the blank lines
-    // the bit after the 3 or 9
+    // the bit after the stack labels (1  2  3  4, etc.)
     // and the gap line between the crates and instructions
-    for line in lines.skip(2) {
+    let lines = instructions.unwrap().1.lines().skip(2);
+
+    for line in lines {
         let inst = Instruction::from_string(line);
 
         for _ in 0..inst.amount {
@@ -133,9 +129,10 @@ fn process_stacks_part_2(stacks: &mut [Vec<String>], input: &str) {
     // can now move a whole stack at once
     // put into a temp stack
 
-    let lines = input.lines();
-    // skip the blank lines
-    for line in lines.skip(2) {
+    let instructions = input.split_once('1');
+    let lines = instructions.unwrap().1.lines().skip(2);
+
+    for line in lines {
         let inst = Instruction::from_string(line);
 
         let mut temp_stack = Vec::new();
