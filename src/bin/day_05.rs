@@ -108,6 +108,14 @@ fn process_stacks(stacks: &mut [Vec<String>], input: &str) {
     // and the gap line between the crates and instructions
     let lines = instructions.unwrap().1.lines().skip(2);
 
+    // won't let me pass multiple to split_once
+    // let instructions = input.split_once(&["\n\n", "\r\n\r\n"]);
+    // let lines = instructions.unwrap().1.lines();
+
+    // split won't work with multiple stringe either.
+    // needs chars '-', ',', '+', etc.
+    // let instructions = input.split(&["\n\n", "\r\n\r\n"]);
+
     for line in lines {
         let inst = Instruction::from_string(line);
 
