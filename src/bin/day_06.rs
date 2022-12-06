@@ -1,4 +1,4 @@
-use std::fs;
+use std::{collections::HashSet, fs};
 
 fn main() {
     // remember to change the input
@@ -8,73 +8,47 @@ fn main() {
 }
 
 fn part_1(input: &str) -> usize {
-    
-    // are the last 4 letters different?
-
-    let mut a = "";
-    let mut b = "";
-    let mut c = "";
-    let mut d = "";
-
-    for (i, letter) in input.split("").enumerate().skip(1) {
-
-        if i % 4 == 0 {
-            a = letter;
-        } else if i % 4 == 1 {
-            b = letter;
-        } else if i % 4 == 2 {
-            c = letter;
-        } else {
-            d = letter;
-        }
-
-        if i >= 4 {
-
-        
-        if all_different(a, b, c, d) {
-            return i;
-        }
-    }
-    }
-    return 99;
+    get_no_duplicates_index(input, 4)
 }
 
 fn part_2(input: &str) -> usize {
-    let mut v = vec![""; 14];
+    get_no_duplicates_index(input, 14)
+}
+
+fn get_no_duplicates_index(input: &str, num_distinct: usize) -> usize {
+    let mut v = vec![""; num_distinct];
 
     for (i, letter) in input.split("").enumerate().skip(1) {
-
-        let remainder = i % 14;
+        let remainder = i % num_distinct;
 
         v[remainder] = letter;
 
-        if all_different_vec(&v) {
+        if i > num_distinct && all_different_vec_set(&v) {
             return i;
         }
-
     }
-
-    99
+    panic!("Shouldn't get here.");
 }
 
-fn all_different(a: &str, b: &str, c: &str, d: &str) -> bool {
-    if a == b || a == c || a == d {
-        return false;
-    } else if b == c || b == d {
-        return false;
-    } else if c == d || d == "" {
-        return false;
-    } else {
-        return true;
-    }
-}
-
-fn all_different_vec(v: &Vec<&str>) -> bool {
-    for i in 0..(v.len()-1) {
-        for j in (i+1)..v.len() {
+fn _all_different_vec(v: &Vec<&str>) -> bool {
+    for i in 0..(v.len() - 1) {
+        for j in (i + 1)..v.len() {
             if v[i] == v[j] {
                 return false;
             }
+        }
+    }
+    true
+}
+
+fn all_different_vec_set(v: &Vec<&str>) -> bool {
+    // this is probably better than the double loop
+    // and easier to see what is going on I think
+    let mut set = HashSet::new();
+    for letter in v {
+        let was_new = set.insert(letter);
+        if !was_new {
+            return false;
         }
     }
     true
@@ -126,5 +100,4 @@ mod tests {
         let result = part_2(&TEST_INPUT_5);
         assert_eq!(26, result);
     }
-
 }
