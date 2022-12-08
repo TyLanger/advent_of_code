@@ -3,8 +3,8 @@ use std::{cell::RefCell, fs, rc::Rc};
 fn main() {
     // remember to change the input
     let file = fs::read_to_string("./inputs/day_07_input.txt").unwrap();
-    println!("{}", part_1(&file));
-    // println!("{}", part_2(&file));
+    // println!("{}", part_1(&file));
+    println!("{}", part_2(&file));
 }
 
 fn part_1(input: &str) -> u32 {
@@ -35,6 +35,45 @@ fn part_1(input: &str) -> u32 {
     // go into the other node
     // update its files
 
+    let root = build_tree(input);
+
+    // println!("root to_string: {:?}", root.borrow().to_string());
+    let v = root.borrow().get_children_sizes_under(100000);
+    let mut size = 0;
+    // println!("v len: {}", v.len());
+    for item in v {
+        size += item;
+    }
+    size
+}
+
+fn part_2(input: &str) -> u32 {
+
+    let root = build_tree(input);
+
+
+    let total_size = 70000000;
+    let needed = 30000000;
+
+    let root_size = root.borrow().get_size();
+
+    // sample input
+    // 700 - 483 = 216
+    // need 300
+    // find dirs that are bigger than 300 - 216
+    // find the smallest from that list
+
+    let unused = total_size - root_size;
+    let to_delete = needed - unused;
+
+    let mut v = root.borrow().get_children_sizes_over(to_delete);
+    // find the smallest
+    v.sort();
+
+    v[0]
+}
+
+fn build_tree(input: &str) -> Rc<RefCell<TreeNode>> {
     let root = Rc::new(RefCell::new(TreeNode::new()));
     let mut current = Rc::clone(&root);
 
@@ -74,14 +113,7 @@ fn part_1(input: &str) -> u32 {
         }
     }
 
-    // println!("root to_string: {:?}", root.borrow().to_string());
-    let v = root.borrow().get_children_sizes_under(100000);
-    let mut size = 0;
-    // println!("v len: {}", v.len());
-    for item in v {
-        size += item;
-    }
-    size
+    root
 }
 
 fn add_child_file(current: Rc<RefCell<TreeNode>>, value: u32) {
@@ -205,6 +237,35 @@ impl TreeNode {
         v
     }
 
+    fn get_children_sizes_over(&self, over: u32) -> Vec<u32> {
+        let mut v = vec![];
+        // println!("children len {}", self.children.len());
+
+        // if self.children.is_empty() {
+        //     let size = self.get_size();
+        //     if size < under {
+        //         v.push(size);
+        //     }
+        // }
+
+        for c in &self.children {
+            let size: u32 = c.borrow().get_size();
+            if size > over {
+                // println!("Adding size {}", size);
+                v.push(size);
+            }
+
+            let v_children = c.borrow().get_children_sizes_over(over);
+
+            for item in v_children {
+                // println!("Adding item {}", item);
+                v.push(item);
+            }
+        }
+
+        v
+    }
+
     fn get_node(&self, name: &str) -> Option<&TreeNode> {
         for d in &self.directories {
             if d.name == name {
@@ -278,6 +339,13 @@ $ ls
         let result = part_1(&DAY_7_BASIC_INPUT);
 
         assert_eq!(95437, result);
+    }
+
+    #[test]
+    fn part_2_works() {
+        let result = part_2(&DAY_7_BASIC_INPUT);
+
+        assert_eq!(24933642, result);
     }
 
     #[test]
@@ -501,5 +569,48 @@ $ ls
         assert_eq!(10, root.borrow().get_size());
 
         assert_eq!(vec![3, 7], root.borrow().get_children_sizes_under(8));
+    }
+
+    #[test]
+    fn test_dir_over_size() {
+        // root
+        // dir a
+        //    file 1
+        //    file 2
+        // dir b
+        //    file 3
+        //    file 4
+
+        let root = Rc::new(RefCell::new(TreeNode::new()));
+
+        let mut node_a = TreeNode::new();
+        node_a.name("a");
+        let child_a = Rc::new(RefCell::new(node_a));
+        child_a.borrow_mut().parent = Some(Rc::clone(&root));
+        add_child_dir(Rc::clone(&root), Rc::clone(&child_a));
+
+        let mut node_b = TreeNode::new();
+        node_b.name("b");
+        let child_b = Rc::new(RefCell::new(node_b));
+        child_b.borrow_mut().parent = Some(Rc::clone(&root));
+        add_child_dir(Rc::clone(&root), child_b);
+
+        // add files to a
+        let mut current = Rc::clone(&child_a);
+        add_child_file(Rc::clone(&current), 1);
+        add_child_file(Rc::clone(&current), 2);
+
+        let current_clone = Rc::clone(&current);
+        current = Rc::clone(current_clone.borrow().parent.as_ref().unwrap());
+
+        let current_clone = Rc::clone(&current);
+        current = Rc::clone(&current_clone.borrow().get_dir_by_name("b").unwrap());
+
+        add_child_file(Rc::clone(&current), 3);
+        add_child_file(Rc::clone(&current), 4);
+
+        assert_eq!(10, root.borrow().get_size());
+
+        assert_eq!(vec![3, 7], root.borrow().get_children_sizes_over(2));
     }
 }
