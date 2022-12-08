@@ -1,9 +1,9 @@
-use std::{cell::RefCell, fs, rc::Rc};
+use std::{cell::RefCell, fmt::Display, fs, rc::Rc};
 
 fn main() {
     // remember to change the input
     let file = fs::read_to_string("./inputs/day_07_input.txt").unwrap();
-    // println!("{}", part_1(&file));
+    println!("{}", part_1(&file));
     println!("{}", part_2(&file));
 }
 
@@ -23,7 +23,6 @@ fn part_1(input: &str) -> u32 {
 
     // vec of all dirs
     // node has a vec of files and a vec of dir children
-    //
 
     // order
     // start at root
@@ -39,8 +38,8 @@ fn part_1(input: &str) -> u32 {
 
     // println!("root to_string: {:?}", root.borrow().to_string());
     let v = root.borrow().get_children_sizes_under(100000);
+
     let mut size = 0;
-    // println!("v len: {}", v.len());
     for item in v {
         size += item;
     }
@@ -48,9 +47,7 @@ fn part_1(input: &str) -> u32 {
 }
 
 fn part_2(input: &str) -> u32 {
-
     let root = build_tree(input);
-
 
     let total_size = 70000000;
     let needed = 30000000;
@@ -84,7 +81,6 @@ fn build_tree(input: &str) -> Rc<RefCell<TreeNode>> {
             // ..
 
             let arg = line.split_once("cd ").unwrap().1;
-            // println!("arg: {:?}", arg);
 
             if arg.contains("..") {
                 let current_clone = Rc::clone(&current);
@@ -107,8 +103,7 @@ fn build_tree(input: &str) -> Rc<RefCell<TreeNode>> {
             // 12312398 file.txt
             let size = line.split_once(' ').unwrap().0;
             let value = size.parse().unwrap();
-            // println!("file value: {}", value);
-            // current.borrow_mut().insert_file(size.parse().unwrap());
+
             add_child_file(Rc::clone(&current), value);
         }
     }
@@ -117,13 +112,6 @@ fn build_tree(input: &str) -> Rc<RefCell<TreeNode>> {
 }
 
 fn add_child_file(current: Rc<RefCell<TreeNode>>, value: u32) {
-    // let child = Rc::new(RefCell::new(TreeNode::new()));
-    // current.borrow_mut().children.push(Rc::clone(&child));
-
-    // let mut mut_child = child.borrow_mut();
-    // mut_child.parent = Some(Rc::clone(&current));
-    // mut_child.files.push(value);
-
     current.borrow_mut().files.push(value);
 }
 
@@ -135,7 +123,6 @@ fn add_child_dir(current: Rc<RefCell<TreeNode>>, child: Rc<RefCell<TreeNode>>) {
 // https://applied-math-coding.medium.com/a-tree-structure-implemented-in-rust-8344783abd75
 struct TreeNode {
     files: Vec<u32>,
-    directories: Vec<TreeNode>,
     name: String,
     children: Vec<Rc<RefCell<TreeNode>>>,
     parent: Option<Rc<RefCell<TreeNode>>>,
@@ -145,23 +132,10 @@ impl TreeNode {
     fn new() -> Self {
         TreeNode {
             files: vec![],
-            directories: vec![],
             name: "".to_string(),
             children: vec![],
             parent: None,
         }
-    }
-
-    fn insert_file(&mut self, file_size: u32) {
-        self.files.push(file_size);
-    }
-
-    fn insert_node(&mut self, node: TreeNode) {
-        self.directories.push(node);
-    }
-
-    fn add_child(&mut self, new_node: Rc<RefCell<TreeNode>>) {
-        self.children.push(new_node);
     }
 
     fn name(&mut self, name: &str) {
@@ -174,62 +148,26 @@ impl TreeNode {
             self_count += f;
         }
 
-        let mut dir_count = 0;
-
-        for d in &self.directories {
-            dir_count += d.get_size();
-        }
-
         let mut child_count = 0;
         for c in &self.children {
             child_count += c.borrow().get_size();
         }
 
-        // cache the size
-        self_count + dir_count + child_count
-    }
-
-    fn get_sub_dir_sizes_under(&self, under: u32) -> Vec<u32> {
-        let mut v = vec![];
-
-        for d in &self.directories {
-            let size = d.get_size();
-            if size < under {
-                v.push(size);
-            }
-
-            let v_children = d.get_sub_dir_sizes_under(under);
-
-            for item in v_children {
-                v.push(item);
-            }
-        }
-
-        v
+        self_count + child_count
     }
 
     fn get_children_sizes_under(&self, under: u32) -> Vec<u32> {
         let mut v = vec![];
-        // println!("children len {}", self.children.len());
-
-        // if self.children.is_empty() {
-        //     let size = self.get_size();
-        //     if size < under {
-        //         v.push(size);
-        //     }
-        // }
 
         for c in &self.children {
             let size: u32 = c.borrow().get_size();
             if size < under {
-                // println!("Adding size {}", size);
                 v.push(size);
             }
 
             let v_children = c.borrow().get_children_sizes_under(under);
 
             for item in v_children {
-                // println!("Adding item {}", item);
                 v.push(item);
             }
         }
@@ -239,40 +177,21 @@ impl TreeNode {
 
     fn get_children_sizes_over(&self, over: u32) -> Vec<u32> {
         let mut v = vec![];
-        // println!("children len {}", self.children.len());
-
-        // if self.children.is_empty() {
-        //     let size = self.get_size();
-        //     if size < under {
-        //         v.push(size);
-        //     }
-        // }
 
         for c in &self.children {
             let size: u32 = c.borrow().get_size();
             if size > over {
-                // println!("Adding size {}", size);
                 v.push(size);
             }
 
             let v_children = c.borrow().get_children_sizes_over(over);
 
             for item in v_children {
-                // println!("Adding item {}", item);
                 v.push(item);
             }
         }
 
         v
-    }
-
-    fn get_node(&self, name: &str) -> Option<&TreeNode> {
-        for d in &self.directories {
-            if d.name == name {
-                return Some(d);
-            }
-        }
-        None
     }
 
     fn get_dir_by_name(&self, name: &str) -> Option<Rc<RefCell<TreeNode>>> {
@@ -283,24 +202,23 @@ impl TreeNode {
         }
         None
     }
+}
 
-    fn is_leaf(&self) -> bool {
-        // self.directories.is_empty()
-        self.children.is_empty() && self.directories.is_empty()
-    }
-
-    fn to_string(&self) -> String {
+impl Display for TreeNode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // this doesn't look pretty
+        // but it was useful for debugging once
         let mut output = "".to_string();
         for f in &self.files {
+            // the newlines don't work right
             output = format!("{}file {}\n", output, f);
         }
 
         for c in &self.children {
-            // c.borrow().to_string()
-            output = format!("{}child: {}\n", output, c.borrow().to_string());
+            output = format!("{}child: {}\n", output, c.borrow());
         }
 
-        output
+        write!(f, "{}", output)
     }
 }
 
@@ -334,7 +252,6 @@ $ ls
 7214296 k";
 
     #[test]
-    // #[ignore = "not ready"]
     fn part_1_works() {
         let result = part_1(&DAY_7_BASIC_INPUT);
 
@@ -356,134 +273,11 @@ $ ls
     }
 
     #[test]
-    fn lone_node_is_leaf() {
-        let node = TreeNode::new();
-
-        assert!(node.is_leaf());
-    }
-
-    #[test]
-    fn tree_node_insert_file() {
-        let mut node = TreeNode::new();
-        node.insert_file(123);
-        node.insert_file(456);
-
-        assert_eq!(579, node.get_size());
-    }
-
-    #[test]
-    fn root_is_not_leaf() {
-        let mut root = TreeNode::new();
-        let leaf = TreeNode::new();
-        root.insert_node(leaf);
-
-        // let leaf = Rc::new(RefCell::new(TreeNode::new()));
-        // root.add_child(leaf);
-        // leaf.borrow_mut().parent = Some(Rc::new(RefCell::new(root)));
-
-        // assert!(leaf.is_leaf());
-        assert!(!root.is_leaf());
-    }
-
-    #[test]
-    fn tree_with_children() {
-        let mut root = TreeNode::new();
-        root.insert_file(1);
-        root.insert_file(2);
-
-        let mut node = TreeNode::new();
-        node.insert_file(3);
-
-        root.insert_node(node);
-
-        assert_eq!(6, root.get_size());
-    }
-
-    #[test]
-    fn get_directories_with_size_under_x() {
-        let mut root = TreeNode::new();
-        root.insert_file(4);
-        root.insert_file(2);
-
-        // sub dir a
-        let mut node = TreeNode::new();
-        node.insert_file(1);
-        node.insert_file(2);
-
-        root.insert_node(node);
-
-        // sub dir b
-        let mut node = TreeNode::new();
-        node.insert_file(4);
-
-        root.insert_node(node);
-
-        // fails
-        let mut node = TreeNode::new();
-        node.insert_file(4);
-        node.insert_file(6);
-
-        root.insert_node(node);
-
-        let dirs = root.get_sub_dir_sizes_under(10);
-
-        assert_eq!(vec![3, 4], dirs);
-    }
-
-    #[test]
-    fn get_sub_dir_inside_too_big_dir() {
-        let mut root = TreeNode::new();
-
-        let mut mid = TreeNode::new();
-        mid.insert_file(11);
-
-        let mut leaf = TreeNode::new();
-        leaf.insert_file(3);
-
-        mid.insert_node(leaf);
-        root.insert_node(mid);
-
-        let dirs = root.get_sub_dir_sizes_under(10);
-
-        assert_eq!(vec![3], dirs);
-    }
-
-    #[test]
-    fn get_dir_by_name_test() {
-        let mut root = TreeNode::new();
-
-        let mut node_1 = TreeNode::new();
-        node_1.name("abc");
-        node_1.insert_file(3);
-        root.insert_node(node_1);
-
-        let mut node_2 = TreeNode::new();
-        node_2.name("def");
-        node_2.insert_file(4);
-        root.insert_node(node_2);
-
-        let size = root.get_node("abc").unwrap().get_size();
-
-        assert_eq!(3, size);
-
-        let doesnt_exist = root.get_node("ghi");
-        assert!(doesnt_exist.is_none());
-    }
-
-    #[test]
     fn init_tree() {
         let root = Rc::new(RefCell::new(TreeNode::new()));
-        let mut current = Rc::clone(&root);
+        let current = Rc::clone(&root);
 
         add_child_file(current, 14);
-
-        // let child = Rc::new(RefCell::new(TreeNode::new()));
-        // current.borrow_mut().children.push(Rc::clone(&child));
-        // {
-        //     let mut mut_child = child.borrow_mut();
-        //     mut_child.parent = Some(Rc::clone(&current));
-        //     mut_child.files.push(14);
-        // }
 
         assert_eq!(14, root.borrow().get_size());
     }
@@ -501,22 +295,19 @@ $ ls
 
         let child = Rc::new(RefCell::new(TreeNode::new()));
         current = Rc::clone(&child);
-        let out = Rc::clone(&child);
 
         add_child_file(current, 3);
         current = Rc::clone(&root);
         add_child_dir(current, child);
 
         assert_eq!(6, root.borrow().get_size());
-        assert!(!root.borrow().is_leaf());
-        assert!(out.borrow().is_leaf());
     }
 
     #[test]
     fn add_x_children_with_files() {
         let root = Rc::new(RefCell::new(TreeNode::new()));
 
-        let mut current = Rc::clone(&root);
+        let mut current;
         for i in 1..=3 {
             current = Rc::clone(&root);
             let child = Rc::new(RefCell::new(TreeNode::new()));
