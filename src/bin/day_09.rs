@@ -9,59 +9,17 @@ fn main() {
 }
 
 fn part_1(input: &str) -> usize {
-    // each line moves the head in a direction x tiles
-
-    // need to find unique positions visited by the tail
-    // seems like a set
-    let mut tail_positions: HashSet<Position> = HashSet::new();
-
-    let mut head_pos = Position::new(0, 0);
-    let mut tail_pos = Position::new(0, 0);
-
-    let lines = input.lines();
-    for line in lines {
-        let (letter, number) = line.split_once(' ').unwrap();
-        let amount = number.parse().unwrap();
-        match letter {
-            "U" => {
-                for _ in 0..amount {
-                    head_pos.y += 1;
-                    tail_pos.calculate_follow_pos(head_pos);
-                    tail_positions.insert(tail_pos);
-                }
-            }
-            "R" => {
-                for _ in 0..amount {
-                    head_pos.x += 1;
-                    tail_pos.calculate_follow_pos(head_pos);
-                    tail_positions.insert(tail_pos);
-                }
-            }
-            "D" => {
-                for _ in 0..amount {
-                    head_pos.y -= 1;
-                    tail_pos.calculate_follow_pos(head_pos);
-                    tail_positions.insert(tail_pos);
-                }
-            }
-            "L" => {
-                for _ in 0..amount {
-                    head_pos.x -= 1;
-                    tail_pos.calculate_follow_pos(head_pos);
-                    tail_positions.insert(tail_pos);
-                }
-            }
-            _ => panic!("bad input"),
-        }
-    }
-
-    tail_positions.len()
+    get_num_tail_positions(input, 2)
 }
 
 fn part_2(input: &str) -> usize {
+    get_num_tail_positions(input, 10)
+}
+
+fn get_num_tail_positions(input: &str, rope_length: usize) -> usize {
     let mut tail_positions: HashSet<Position> = HashSet::new();
 
-    let mut ropes = vec![Position::new(0, 0); 10];
+    let mut ropes = vec![Position::new(0, 0); rope_length];
 
     let lines = input.lines();
     for line in lines {
@@ -78,20 +36,22 @@ fn part_2(input: &str) -> usize {
             "R" => {
                 for _ in 0..amount {
                     move_ropes(&mut ropes, Position::new(1, 0));
-                    let tail = ropes[9];
-                    tail_positions.insert(tail);
+                    let tail = ropes.last().unwrap();
+                    tail_positions.insert(*tail);
                 }
             }
             "D" => {
                 for _ in 0..amount {
                     move_ropes(&mut ropes, Position::new(0, -1));
-                    tail_positions.insert(ropes[9]);
+                    let tail = ropes.last().unwrap();
+                    tail_positions.insert(*tail);
                 }
             }
             "L" => {
                 for _ in 0..amount {
                     move_ropes(&mut ropes, Position::new(-1, 0));
-                    tail_positions.insert(ropes[9]);
+                    let tail = ropes.last().unwrap();
+                    tail_positions.insert(*tail);
                 }
             }
             _ => panic!("bad input"),
@@ -104,7 +64,11 @@ fn move_ropes(ropes: &mut Vec<Position>, head_movement: Position) {
     ropes[0].move_pos(head_movement);
     for i in 1..ropes.len() {
         let next = ropes[i - 1];
+        let before = ropes[i];
         ropes[i].calculate_follow_pos(next);
+        if before == ropes[i] {
+            return;
+        }
     }
 }
 
