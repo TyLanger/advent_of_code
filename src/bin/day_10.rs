@@ -22,32 +22,32 @@ fn part_2(input: &str) -> String {
         if let Some((_command, arg)) = split {
             let num: i32 = arg.parse().unwrap();
 
-            cycle += 1;
-            let letter = get_character(cycle, count);
-            output = format!("{}{}", output, letter);
-            if cycle % 40 == 0 {
-                output = format!("{}\n", output);
-            }
+            // addx takes 2 cycles
+            for _ in 0..2 {
+                cycle += 1;
+                let letter = get_character(cycle, count);
 
-            cycle += 1;
-            let letter = get_character(cycle, count);
-            output = format!("{}{}", output, letter);
-            if cycle % 40 == 0 {
-                output = format!("{}\n", output);
+                append_letter_newline_every_40(&mut output, letter, cycle);
             }
 
             count += num;
         } else {
-            // noop
+            // noop takes 1 cycle
             cycle += 1;
             let letter = get_character(cycle, count);
-            output = format!("{}{}", output, letter);
-            if cycle % 40 == 0 {
-                output = format!("{}\n", output);
-            }
+
+            append_letter_newline_every_40(&mut output, letter, cycle);
         }
     }
+    // remove last newline
     output.trim_end().to_string()
+}
+
+fn append_letter_newline_every_40(output: &mut String, letter: String, cycle: i32) {
+    output.push_str(&letter);
+    if cycle % 40 == 0 {
+        output.push('\n');
+    }
 }
 
 fn get_signal_strengths(input: &str) -> Vec<i32> {
@@ -62,16 +62,13 @@ fn get_signal_strengths(input: &str) -> Vec<i32> {
         if let Some((_command, arg)) = split {
             let num: i32 = arg.parse().unwrap();
 
-            cycle += 1;
-            if is_magic_cycle(cycle) {
-                v[index] = count * cycle;
-                index += 1;
-            }
-
-            cycle += 1;
-            if is_magic_cycle(cycle) {
-                v[index] = count * cycle;
-                index += 1;
+            // addx takes 2 cycles
+            for _ in 0..2 {
+                cycle += 1;
+                if is_magic_cycle(cycle) {
+                    v[index] = count * cycle;
+                    index += 1;
+                }
             }
 
             count += num;
@@ -83,12 +80,8 @@ fn get_signal_strengths(input: &str) -> Vec<i32> {
                 index += 1;
             }
         }
-        if cycle > 220 {
-            break;
-        }
     }
 
-    // dbg!(&v);
     v
 }
 
@@ -141,31 +134,25 @@ mod tests {
 
     #[test]
     fn part_2_works() {
-        assert_eq!(
-            "##..##..##..##..##..##..##..##..##..##..
+        let expected = "##..##..##..##..##..##..##..##..##..##..
 ###...###...###...###...###...###...###.
 ####....####....####....####....####....
 #####.....#####.....#####.....#####.....
 ######......######......######......####
 #######.......#######.......#######....."
-                .to_string(),
-            part_2(&BASIC_INPUT_DAY_10)
-        );
-    }
+            .to_string();
 
-    #[test]
-    fn visual_test() {
-        println!(
-            "##..##..##..##..##..##..##..##..##..##..
-###...###...###...###...###...###...###.
-####....####....####....####....####....
-#####.....#####.....#####.....#####.....
-######......######......######......####
-#######.......#######.......#######....."
-        );
+        let result = part_2(&BASIC_INPUT_DAY_10);
+
+        // run just this test to get the visual
+        // or if it fails, it will print the visual
+        println!("Expected:");
+        println!("{}", expected);
         println!();
-        println!("{}", part_2(&BASIC_INPUT_DAY_10));
-        assert!(true);
+        println!("Result:");
+        println!("{}", result);
+
+        assert_eq!(expected, result);
     }
 
     #[test]
@@ -182,10 +169,18 @@ mod tests {
         let char = get_character(4, 1);
         assert_eq!(".".to_string(), char);
 
+        // start
         let char = get_character(41, 1);
         assert_eq!("#".to_string(), char);
 
         let char = get_character(81, 1);
+        assert_eq!("#".to_string(), char);
+
+        // end
+        let char = get_character(80, 1);
+        assert_eq!(".".to_string(), char);
+
+        let char = get_character(200, 38);
         assert_eq!("#".to_string(), char);
     }
 

@@ -6,7 +6,7 @@ fn main() {
     println!("{}", part_1(&input));
 }
 
-fn part_1(input: &str) -> u32 {
+fn part_1(_input: &str) -> u32 {
     99
 }
 
