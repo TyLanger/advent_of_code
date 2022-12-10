@@ -4,11 +4,50 @@ fn main() {
     let input = fs::read_to_string("./inputs/day_10_input.txt").unwrap();
 
     println!("{}", part_1(&input));
+    println!("{}", part_2(&input)); // PGHFGLUG
 }
 
 fn part_1(input: &str) -> i32 {
     let v = get_signal_strengths(input);
     v.iter().sum()
+}
+
+fn part_2(input: &str) -> String {
+    let mut output = "".to_string();
+    let mut cycle = 0;
+    let mut count = 1;
+
+    for line in input.lines() {
+        let split = line.split_once(' ');
+        if let Some((_command, arg)) = split {
+            let num: i32 = arg.parse().unwrap();
+
+            cycle += 1;
+            let letter = get_character(cycle, count);
+            output = format!("{}{}", output, letter);
+            if cycle % 40 == 0 {
+                output = format!("{}\n", output);
+            }
+
+            cycle += 1;
+            let letter = get_character(cycle, count);
+            output = format!("{}{}", output, letter);
+            if cycle % 40 == 0 {
+                output = format!("{}\n", output);
+            }
+
+            count += num;
+        } else {
+            // noop
+            cycle += 1;
+            let letter = get_character(cycle, count);
+            output = format!("{}{}", output, letter);
+            if cycle % 40 == 0 {
+                output = format!("{}\n", output);
+            }
+        }
+    }
+    output.trim_end().to_string()
 }
 
 fn get_signal_strengths(input: &str) -> Vec<i32> {
@@ -49,7 +88,7 @@ fn get_signal_strengths(input: &str) -> Vec<i32> {
         }
     }
 
-    dbg!(&v);
+    // dbg!(&v);
     v
 }
 
@@ -63,6 +102,19 @@ fn is_magic_cycle(current: i32) -> bool {
         || current == 140
         || current == 180
         || current == 220
+}
+
+fn get_character(cycle: i32, sprite_pos: i32) -> String {
+    // cycle can be between 1 and 40?
+    // 1:1, 40:40, 41:1, 80:40
+    let new_cycle = (cycle - 1) % 40 + 1;
+    let diff = new_cycle.abs_diff(sprite_pos + 1);
+
+    if diff < 2 {
+        "#".to_string()
+    } else {
+        ".".to_string()
+    }
 }
 
 #[cfg(test)]
@@ -87,8 +139,57 @@ mod tests {
         assert_eq!(3960, v[5]);
     }
 
+    #[test]
+    fn part_2_works() {
+        assert_eq!(
+            "##..##..##..##..##..##..##..##..##..##..
+###...###...###...###...###...###...###.
+####....####....####....####....####....
+#####.....#####.....#####.....#####.....
+######......######......######......####
+#######.......#######.......#######....."
+                .to_string(),
+            part_2(&BASIC_INPUT_DAY_10)
+        );
+    }
 
-const BASIC_INPUT_DAY_10: &str = "addx 15
+    #[test]
+    fn visual_test() {
+        println!(
+            "##..##..##..##..##..##..##..##..##..##..
+###...###...###...###...###...###...###.
+####....####....####....####....####....
+#####.....#####.....#####.....#####.....
+######......######......######......####
+#######.......#######.......#######....."
+        );
+        println!();
+        println!("{}", part_2(&BASIC_INPUT_DAY_10));
+        assert!(true);
+    }
+
+    #[test]
+    fn get_right_character() {
+        let char = get_character(1, 1);
+        assert_eq!("#".to_string(), char);
+
+        let char = get_character(2, 1);
+        assert_eq!("#".to_string(), char);
+
+        let char = get_character(3, 1);
+        assert_eq!("#".to_string(), char);
+
+        let char = get_character(4, 1);
+        assert_eq!(".".to_string(), char);
+
+        let char = get_character(41, 1);
+        assert_eq!("#".to_string(), char);
+
+        let char = get_character(81, 1);
+        assert_eq!("#".to_string(), char);
+    }
+
+    const BASIC_INPUT_DAY_10: &str = "addx 15
 addx -11
 addx 6
 addx -3
@@ -234,5 +335,4 @@ addx -11
 noop
 noop
 noop";
-
 }
