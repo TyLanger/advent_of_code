@@ -37,7 +37,7 @@ fn get_monkey_business(input: &str, worry_reducer: usize, rounds: u32) -> usize 
     let mut reducer = 1;
 
     for monkey_input in input_splits.iter().skip(1) {
-        let monkey = Monkey::new(monkey_input);
+        let monkey = Monkey::new(monkey_input, worry_reducer);
         reducer *= monkey.test;
 
         v_monkeys.push(monkey);
@@ -56,15 +56,10 @@ fn get_monkey_business(input: &str, worry_reducer: usize, rounds: u32) -> usize 
 
     for _round in 0..rounds {
         for i in 0..v_monkeys.len() {
-            loop {
-                if let Some(new_value_monkey) = v_monkeys[i].get_new_value_new_monkey(worry_reducer)
-                {
-                    v_count[i] += 1;
+            while let Some(new_value_monkey) = v_monkeys[i].get_new_value_new_monkey() {
+                v_count[i] += 1;
                     let reduced_value = new_value_monkey.0 % reducer;
                     v_monkeys[new_value_monkey.1].items.push_back(reduced_value);
-                } else {
-                    break;
-                }
             }
         }
     }
@@ -78,13 +73,14 @@ fn get_monkey_business(input: &str, worry_reducer: usize, rounds: u32) -> usize 
 struct Monkey {
     items: VecDeque<usize>,
     operation: Operator,
+    worry_reduction: usize,
     test: usize,
     true_monkey_index: usize,
     false_monkey_index: usize,
 }
 
 impl Monkey {
-    fn new(input: &str) -> Self {
+    fn new(input: &str, worry_reduction: usize) -> Self {
         // dbg!(input);
         let mut lines = input.lines();
         let _num = lines.next();
@@ -141,6 +137,7 @@ impl Monkey {
         Monkey {
             items,
             operation,
+            worry_reduction,
             test,
             true_monkey_index,
             false_monkey_index,
@@ -164,9 +161,9 @@ impl Monkey {
         }
     }
 
-    fn get_new_value_new_monkey(&mut self, worry_reducer: usize) -> Option<(usize, usize)> {
+    fn get_new_value_new_monkey(&mut self) -> Option<(usize, usize)> {
         let value = self.get_new_value()?;
-        let update_value = value / worry_reducer;
+        let update_value = value / self.worry_reduction;
         let monkey = self.get_monkey_throw_index(update_value);
         Some((update_value, monkey))
     }
@@ -298,7 +295,7 @@ Monkey 3:
     If true: throw to monkey 2
     If false: throw to monkey 3";
 
-        let m = Monkey::new(input);
+        let m = Monkey::new(input, 3);
         let mut expected = VecDeque::new();
         expected.push_back(79);
         expected.push_back(98);
@@ -323,7 +320,7 @@ Monkey 3:
     If true: throw to monkey 2
     If false: throw to monkey 3";
 
-        let m = Monkey::new(input);
+        let m = Monkey::new(input, 3);
 
         let op = Operator {
             first_value: OpValue::Value(12),
@@ -342,7 +339,7 @@ Monkey 3:
     If true: throw to monkey 2
     If false: throw to monkey 3";
 
-        let mut m = Monkey::new(input);
+        let mut m = Monkey::new(input, 3);
 
         let value = m.get_new_value();
 
@@ -358,19 +355,19 @@ Monkey 3:
     If true: throw to monkey 2
     If false: throw to monkey 3";
 
-        let mut m = Monkey::new(input);
+        let mut m = Monkey::new(input, 3);
 
-        let value = m.get_new_value_new_monkey(3);
+        let value = m.get_new_value_new_monkey();
 
         assert_eq!(500, value.unwrap().0);
         assert_eq!(3, value.unwrap().1);
 
-        let value = m.get_new_value_new_monkey(3);
+        let value = m.get_new_value_new_monkey();
 
         assert_eq!(620, value.unwrap().0);
         assert_eq!(3, value.unwrap().1);
 
-        let value = m.get_new_value_new_monkey(3);
+        let value = m.get_new_value_new_monkey();
 
         assert_eq!(None, value);
     }
@@ -384,21 +381,20 @@ Monkey 3:
     If true: throw to monkey 2
     If false: throw to monkey 3";
 
-        let mut m = Monkey::new(input);
+        let mut m = Monkey::new(input, 1);
 
-        // div by 5 (just testing arbitrary number)
-        let value = m.get_new_value_new_monkey(5);
-
-        assert_eq!(300, value.unwrap().0);
-        assert_eq!(3, value.unwrap().1);
+        let value = m.get_new_value_new_monkey();
 
         // div by 1 (part 2)
-        let value = m.get_new_value_new_monkey(1);
+        assert_eq!(1501, value.unwrap().0);
+        assert_eq!(3, value.unwrap().1);
+
+        let value = m.get_new_value_new_monkey();
 
         assert_eq!(1862, value.unwrap().0);
         assert_eq!(3, value.unwrap().1);
 
-        let value = m.get_new_value_new_monkey(3);
+        let value = m.get_new_value_new_monkey();
 
         assert_eq!(None, value);
     }
