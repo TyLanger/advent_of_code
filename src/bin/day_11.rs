@@ -1,12 +1,21 @@
-use std::{fs, collections::VecDeque};
+use std::{collections::VecDeque, fs};
 
 fn main() {
     let input = fs::read_to_string("./inputs/day_11_input.txt").unwrap();
 
     println!("{}", part_1(&input));
+    println!("{}", part_2(&input));
 }
 
-fn part_1(input: &str) -> u32 {
+fn part_1(input: &str) -> usize {
+    get_monkey_business(input, 3, 20)
+}
+
+fn part_2(input: &str) -> usize {
+    get_monkey_business(input, 1, 10_000)
+}
+
+fn get_monkey_business(input: &str, worry_reducer: usize, rounds: u32) -> usize {
     // queue of items
     // pop
     // mul by x
@@ -23,9 +32,20 @@ fn part_1(input: &str) -> u32 {
     let input_splits: Vec<&str> = input.split("Monkey").collect();
     let mut v_monkeys = Vec::new();
 
+    // to stop numbers from getting too big
+    // number with factors made from each 'test' on each monkey
+    let mut reducer = 1;
+
     for monkey_input in input_splits.iter().skip(1) {
-        v_monkeys.push(Monkey::new(monkey_input));
+        let monkey = Monkey::new(monkey_input);
+        reducer *= monkey.test;
+
+        v_monkeys.push(monkey);
     }
+
+    // dbg!(reducer);
+    // 96577
+    // reducer * reducer will overflow if u32
 
     let mut v_count = vec![0; v_monkeys.len()];
 
@@ -34,32 +54,31 @@ fn part_1(input: &str) -> u32 {
     // get new value
     // push onto new monkey
 
-    for _round in 0..20 {
+    for _round in 0..rounds {
         for i in 0..v_monkeys.len() {
             loop {
-                let new_monkey = v_monkeys[i].get_new_value_new_monkey();
-                if new_monkey.is_none() {
-                    break;
-                } else {
+                if let Some(new_value_monkey) = v_monkeys[i].get_new_value_new_monkey(worry_reducer)
+                {
                     v_count[i] += 1;
-                    v_monkeys[new_monkey.unwrap().1].items.push_back(new_monkey.unwrap().0);
+                    let reduced_value = new_value_monkey.0 % reducer;
+                    v_monkeys[new_value_monkey.1].items.push_back(reduced_value);
+                } else {
+                    break;
                 }
             }
         }
     }
-    
+
     v_count.sort_by(|a, b| b.cmp(a));
 
-    dbg!(&v_count);
     v_count[0] * v_count[1]
-
 }
 
 #[derive(Debug)]
 struct Monkey {
-    items: VecDeque<u32>,
+    items: VecDeque<usize>,
     operation: Operator,
-    test: u32,
+    test: usize,
     true_monkey_index: usize,
     false_monkey_index: usize,
 }
@@ -76,7 +95,7 @@ impl Monkey {
         let true_index = lines.next();
         let false_index = lines.next();
 
-        let mut items: VecDeque<u32> = VecDeque::new();
+        let mut items: VecDeque<usize> = VecDeque::new();
         let item_num_str: Vec<&str> = starting
             .unwrap()
             .split_once(':')
@@ -128,7 +147,7 @@ impl Monkey {
         }
     }
 
-    fn get_new_value(&mut self) -> Option<u32> {
+    fn get_new_value(&mut self) -> Option<usize> {
         let first = self.items.pop_front();
         if let Some(old_value) = first {
             Some(self.operation.calculate(old_value))
@@ -137,7 +156,7 @@ impl Monkey {
         }
     }
 
-    fn get_monkey_throw_index(&self, value: u32) -> usize {
+    fn get_monkey_throw_index(&self, value: usize) -> usize {
         if value % self.test == 0 {
             self.true_monkey_index
         } else {
@@ -145,9 +164,9 @@ impl Monkey {
         }
     }
 
-    fn get_new_value_new_monkey(&mut self) -> Option<(u32, usize)> {
+    fn get_new_value_new_monkey(&mut self, worry_reducer: usize) -> Option<(usize, usize)> {
         let value = self.get_new_value()?;
-        let update_value = value / 3;
+        let update_value = value / worry_reducer;
         let monkey = self.get_monkey_throw_index(update_value);
         Some((update_value, monkey))
     }
@@ -195,7 +214,7 @@ impl Operator {
         }
     }
 
-    fn calculate(&self, value: u32) -> u32 {
+    fn calculate(&self, value: usize) -> usize {
         let first = match self.first_value {
             OpValue::Old => value,
             OpValue::Value(x) => x,
@@ -208,7 +227,6 @@ impl Operator {
             MathSymbol::Plus => first + second,
             MathSymbol::Mul => first * second,
         }
-
     }
 }
 
@@ -216,7 +234,7 @@ impl Operator {
 
 enum OpValue {
     Old,
-    Value(u32),
+    Value(usize),
 }
 
 #[derive(PartialEq, Debug)]
@@ -266,6 +284,12 @@ Monkey 3:
     }
 
     #[test]
+    // #[ignore = "not ready"]
+    fn part_2_works() {
+        assert_eq!(2713310158, part_2(&BASIC_INPUT_DAY_11));
+    }
+
+    #[test]
     fn make_1_monkey() {
         let input = "Monkey 0:
   Starting items: 79, 98
@@ -281,7 +305,11 @@ Monkey 3:
 
         assert_eq!(expected, m.items);
 
-        let op = Operator {first_value: OpValue::Old, operation: MathSymbol::Mul, second_value: OpValue::Value(19)};
+        let op = Operator {
+            first_value: OpValue::Old,
+            operation: MathSymbol::Mul,
+            second_value: OpValue::Value(19),
+        };
         assert_eq!(op, m.operation);
 
         assert_eq!(23, m.test);
@@ -297,7 +325,11 @@ Monkey 3:
 
         let m = Monkey::new(input);
 
-        let op = Operator {first_value: OpValue::Value(12), operation: MathSymbol::Plus, second_value: OpValue::Old};
+        let op = Operator {
+            first_value: OpValue::Value(12),
+            operation: MathSymbol::Plus,
+            second_value: OpValue::Old,
+        };
         assert_eq!(op, m.operation);
     }
 
@@ -314,7 +346,7 @@ Monkey 3:
 
         let value = m.get_new_value();
 
-        assert_eq!(Some(79*19), value);
+        assert_eq!(Some(79 * 19), value);
     }
 
     #[test]
@@ -328,18 +360,56 @@ Monkey 3:
 
         let mut m = Monkey::new(input);
 
-        let value = m.get_new_value_new_monkey();
+        let value = m.get_new_value_new_monkey(3);
 
         assert_eq!(500, value.unwrap().0);
         assert_eq!(3, value.unwrap().1);
 
-        let value = m.get_new_value_new_monkey();
+        let value = m.get_new_value_new_monkey(3);
 
         assert_eq!(620, value.unwrap().0);
         assert_eq!(3, value.unwrap().1);
 
-        let value = m.get_new_value_new_monkey();
+        let value = m.get_new_value_new_monkey(3);
 
         assert_eq!(None, value);
+    }
+
+    #[test]
+    fn changeable_worry() {
+        let input = "Monkey 0:
+  Starting items: 79, 98
+  Operation: new = old * 19
+  Test: divisible by 23
+    If true: throw to monkey 2
+    If false: throw to monkey 3";
+
+        let mut m = Monkey::new(input);
+
+        // div by 5 (just testing arbitrary number)
+        let value = m.get_new_value_new_monkey(5);
+
+        assert_eq!(300, value.unwrap().0);
+        assert_eq!(3, value.unwrap().1);
+
+        // div by 1 (part 2)
+        let value = m.get_new_value_new_monkey(1);
+
+        assert_eq!(1862, value.unwrap().0);
+        assert_eq!(3, value.unwrap().1);
+
+        let value = m.get_new_value_new_monkey(3);
+
+        assert_eq!(None, value);
+    }
+
+    #[test]
+    fn smaller_numbers() {
+        let reducer: u32 = 23 * 19 * 13 * 17;
+
+        let big_number = 100_100_100;
+        let small_number = big_number % reducer;
+
+        assert!(small_number < big_number);
     }
 }
