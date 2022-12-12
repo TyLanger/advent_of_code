@@ -6,7 +6,8 @@ use std::{
 fn main() {
     let input = fs::read_to_string("./inputs/day_12_input.txt").unwrap();
 
-    println!("{}", part_1(&input));
+    // println!("{}", part_1(&input));
+    println!("{}", part_2(&input));
 }
 
 fn part_1(input: &str) -> u32 {
@@ -97,8 +98,115 @@ fn part_1(input: &str) -> u32 {
     // g is current cost
 
     get_path_length(&nodes, start_index, end_index)
+}
 
+fn part_2(input: &str) -> u32 {
+    // a is the lowest
+    // z is the highest
 
+    // do I have to implement a*?
+    // would flow field work?
+    // let characters: Vec<char> = input.chars().collect();
+
+    let width = input.lines().next().unwrap().trim().len();
+    dbg!(width);
+
+    let mut nodes: Vec<Node> = input
+        .chars()
+        .filter(|x| !x.is_whitespace())
+        .map(|c| {
+            let value;
+            let sequence;
+            if c == 'S' || c == 'a' {
+                value = 1;
+                sequence = Sequence::Start;
+            } else if c == 'E' {
+                value = 26;
+                sequence = Sequence::End;
+            } else {
+                value = letter_to_value(c);
+                sequence = Sequence::Normal;
+            }
+
+            Node {
+                value,
+                neighbour_indicies: Vec::new(),
+                sequence,
+            }
+        })
+        .collect();
+
+    let mut start_index = 0;
+    let mut end_index = 0;
+
+    let mut start_indicies = Vec::new();
+
+    for i in 0..nodes.len() {
+        match nodes[i].sequence {
+            Sequence::Start => {
+                start_index = i;
+                start_indicies.push(i);
+            }
+            Sequence::End => end_index = i,
+            Sequence::Normal => {}
+        }
+        if let Some(up) = get_up_index(i, width) {
+            // is the neightbour at most 1 bigger?
+            if valid_neighbour(nodes[i].value, nodes[up].value) {
+                nodes[i].neighbour_indicies.push(up);
+            }
+        }
+        if let Some(right) = get_right_index(i, width, nodes.len()) {
+            if valid_neighbour(nodes[i].value, nodes[right].value) {
+                nodes[i].neighbour_indicies.push(right);
+            }
+        }
+        if let Some(down) = get_down_index(i, width, nodes.len()) {
+            if valid_neighbour(nodes[i].value, nodes[down].value) {
+                nodes[i].neighbour_indicies.push(down);
+            }
+        }
+        if let Some(left) = get_left_index(i, width) {
+            if valid_neighbour(nodes[i].value, nodes[left].value) {
+                nodes[i].neighbour_indicies.push(left);
+            }
+        }
+    }
+
+    dbg!(start_index, end_index);
+
+    // a* with the heuristic being your value?
+    // from a=1, it will take at least 25 moves
+    // for i in 0..nodes.len() {
+    //     println!("{:?}", nodes[i].neighbour_indicies);
+    // }
+
+    // start at start_index
+    // are you at the end?
+    // no?
+    // add neighbours to the open set
+    // add self to closed set
+    // find smallest neighbour
+    // that's the new next
+    // next is the lowest f_score
+    // f_score is g + h
+    // g is current cost
+
+    // get_path_length(&nodes, start_index, end_index);
+    dbg!(&start_indicies.len());
+
+    let mut shortest_len = 600;
+    let mut lengths = Vec::new();
+    for s in start_indicies {
+        let len = get_path_length(&nodes, s, end_index);
+        lengths.push(len);
+        if len < shortest_len {
+            shortest_len = len;
+        }
+    }
+    // dbg!(lengths);
+
+    shortest_len
 }
 
 fn get_path_length(nodes: &Vec<Node>, start_index: usize, end_index: usize) -> u32 {
@@ -120,7 +228,7 @@ fn get_path_length(nodes: &Vec<Node>, start_index: usize, end_index: usize) -> u
     while !open_set.is_empty() {
         count += 1;
         // dbg!(count);
-        if count > 5_000 {
+        if count > 10_000 {
             print!("Infinite Loop");
             return 0;
         }
@@ -150,7 +258,9 @@ fn get_path_length(nodes: &Vec<Node>, start_index: usize, end_index: usize) -> u
             }
         }
     }
-    0
+    // a surrounded by c's
+    // println!("end of path algorithm. Can't reach target");
+    10_000
 }
 
 fn get_current(open_set: &mut HashSet<usize>, f_scores: &Vec<u32>) -> usize {
@@ -257,6 +367,11 @@ abdefghi";
     #[test]
     fn part_1_works() {
         assert_eq!(31, part_1(&BASIC_INPUT_DAY_12));
+    }
+
+    #[test]
+    fn part_2_works() {
+        assert_eq!(29, part_2(&BASIC_INPUT_DAY_12));
     }
 
     #[test]
