@@ -96,7 +96,12 @@ fn part_1(input: &str) -> u32 {
     // f_score is g + h
     // g is current cost
 
-    // let mut open_set = BinaryHeap::new();
+    get_path_length(&nodes, start_index, end_index)
+
+
+}
+
+fn get_path_length(nodes: &Vec<Node>, start_index: usize, end_index: usize) -> u32 {
     let mut open_set = HashSet::new();
 
     let mut current = start_index;
@@ -115,10 +120,8 @@ fn part_1(input: &str) -> u32 {
     while !open_set.is_empty() {
         count += 1;
         // dbg!(count);
-        if count > 1_000_000 {
-            dbg!(g_scores[15]);
-            dbg!(f_scores[15]);
-            dbg!(count);
+        if count > 5_000 {
+            print!("Infinite Loop");
             return 0;
         }
         // current = open_set.pop().unwrap();
@@ -128,7 +131,6 @@ fn part_1(input: &str) -> u32 {
 
         if current == end_index {
             let path = get_path(&came_from, current);
-            dbg!(path);
             return path;
         }
 
@@ -148,8 +150,7 @@ fn part_1(input: &str) -> u32 {
             }
         }
     }
-
-    99
+    0
 }
 
 fn get_current(open_set: &mut HashSet<usize>, f_scores: &Vec<u32>) -> usize {
@@ -157,8 +158,9 @@ fn get_current(open_set: &mut HashSet<usize>, f_scores: &Vec<u32>) -> usize {
 
     let mut lowest = u32::MAX; // big number for default case
     let mut current_lowest = 0;
-    for i in 0..f_scores.len() {
-        if open_set.contains(&i) && f_scores[i] < lowest {
+
+    for &i in open_set.iter() {
+        if f_scores[i] < lowest {
             lowest = f_scores[i];
             current_lowest = i;
         }
