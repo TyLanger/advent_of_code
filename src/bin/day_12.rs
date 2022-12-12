@@ -1,4 +1,7 @@
-use std::{fs, collections::BinaryHeap};
+use std::{
+    collections::{hash_set, BinaryHeap, HashSet},
+    fs,
+};
 
 fn main() {
     let input = fs::read_to_string("./inputs/day_12_input.txt").unwrap();
@@ -78,9 +81,9 @@ fn part_1(input: &str) -> u32 {
 
     // a* with the heuristic being your value?
     // from a=1, it will take at least 25 moves
-    for i in 0..nodes.len() {
-        println!("{:?}", nodes[i].neighbour_indicies);
-    }
+    // for i in 0..nodes.len() {
+    //     println!("{:?}", nodes[i].neighbour_indicies);
+    // }
 
     // start at start_index
     // are you at the end?
@@ -93,9 +96,87 @@ fn part_1(input: &str) -> u32 {
     // f_score is g + h
     // g is current cost
 
-    // let open_set = BinaryHeap::new();
+    // let mut open_set = BinaryHeap::new();
+    let mut open_set = HashSet::new();
+
+    let mut current = start_index;
+    open_set.insert(current);
+
+    let mut closed_set = HashSet::new();
+    // closed_set.insert(current);
+
+    let mut count = 0;
+
+    let mut g_scores = vec![1000000; nodes.len()];
+    g_scores[current] = 0;
+    let mut f_scores = vec![100000; nodes.len()];
+    let mut came_from = vec![None; nodes.len()];
+
+    while !open_set.is_empty() {
+        count += 1;
+        // dbg!(count);
+        if count > 1_000_000 {
+            dbg!(g_scores[15]);
+            dbg!(f_scores[15]);
+            dbg!(count);
+            return 0;
+        }
+        // current = open_set.pop().unwrap();
+        current = get_current(&mut open_set, &f_scores);
+        // println!("Current: {}, value: {}", current, nodes[current].value);
+        closed_set.insert(current);
+
+        if current == end_index {
+            let path = get_path(&came_from, current);
+            dbg!(path);
+            return path;
+        }
+
+        for &neighbour in &nodes[current].neighbour_indicies {
+            if closed_set.contains(&neighbour) {
+                continue;
+            }
+
+            let tentative_g_score = g_scores[current] + 1;
+            if tentative_g_score < g_scores[neighbour] {
+                came_from[neighbour] = Some(current);
+                g_scores[neighbour] = tentative_g_score;
+                f_scores[neighbour] = tentative_g_score + nodes[neighbour].value;
+                if !open_set.contains(&neighbour) {
+                    open_set.insert(neighbour);
+                }
+            }
+        }
+    }
 
     99
+}
+
+fn get_current(open_set: &mut HashSet<usize>, f_scores: &Vec<u32>) -> usize {
+    // get the item in the open set with the smallest fscore
+
+    let mut lowest = u32::MAX; // big number for default case
+    let mut current_lowest = 0;
+    for i in 0..f_scores.len() {
+        if open_set.contains(&i) && f_scores[i] < lowest {
+            lowest = f_scores[i];
+            current_lowest = i;
+        }
+    }
+
+    open_set.remove(&current_lowest);
+    current_lowest
+}
+
+fn get_path(came_from: &Vec<Option<usize>>, current: usize) -> u32 {
+    let mut count = 0;
+    let mut curr_i = current;
+    while let Some(i) = came_from[curr_i] {
+        // println!("Path: {}", i);
+        curr_i = i;
+        count += 1;
+    }
+    count
 }
 
 fn letter_to_value(letter: char) -> u32 {
