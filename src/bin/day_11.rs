@@ -58,8 +58,8 @@ fn get_monkey_business(input: &str, worry_reducer: usize, rounds: u32) -> usize 
         for i in 0..v_monkeys.len() {
             while let Some(new_value_monkey) = v_monkeys[i].get_new_value_new_monkey() {
                 v_count[i] += 1;
-                    let reduced_value = new_value_monkey.0 % reducer;
-                    v_monkeys[new_value_monkey.1].items.push_back(reduced_value);
+                let reduced_value = new_value_monkey.0 % reducer;
+                v_monkeys[new_value_monkey.1].items.push_back(reduced_value);
             }
         }
     }
