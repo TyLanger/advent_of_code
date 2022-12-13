@@ -1,13 +1,13 @@
 use std::{
-    collections::{hash_set, BinaryHeap, HashSet},
+    collections::{BinaryHeap, HashSet},
     fs,
 };
 
 fn main() {
     let input = fs::read_to_string("./inputs/day_12_input.txt").unwrap();
 
-    // println!("{}", part_1(&input));
-    println!("{}", part_2(&input));
+    println!("{}", part_1(&input)); // 350
+    println!("{}", part_2(&input)); // 349
 }
 
 fn part_1(input: &str) -> u32 {
@@ -211,9 +211,12 @@ fn part_2(input: &str) -> u32 {
 
 fn get_path_length(nodes: &Vec<Node>, start_index: usize, end_index: usize) -> u32 {
     let mut open_set = HashSet::new();
+    let mut open_heap = BinaryHeap::new();
 
     let mut current = start_index;
     open_set.insert(current);
+    open_heap.push(HeapNode::new(100000, current));
+    let mut current_heap_node;
 
     let mut closed_set = HashSet::new();
     // closed_set.insert(current);
@@ -233,7 +236,11 @@ fn get_path_length(nodes: &Vec<Node>, start_index: usize, end_index: usize) -> u
             return 0;
         }
         // current = open_set.pop().unwrap();
-        current = get_current(&mut open_set, &f_scores);
+        // current = get_current(&mut open_set, &f_scores);
+        current_heap_node = open_heap.pop().unwrap();
+        current = current_heap_node.index;
+        open_set.remove(&current);
+
         // println!("Current: {}, value: {}", current, nodes[current].value);
         closed_set.insert(current);
 
@@ -254,6 +261,7 @@ fn get_path_length(nodes: &Vec<Node>, start_index: usize, end_index: usize) -> u
                 f_scores[neighbour] = tentative_g_score + nodes[neighbour].value;
                 if !open_set.contains(&neighbour) {
                     open_set.insert(neighbour);
+                    open_heap.push(HeapNode::new(f_scores[neighbour], neighbour));
                 }
             }
         }
@@ -263,24 +271,24 @@ fn get_path_length(nodes: &Vec<Node>, start_index: usize, end_index: usize) -> u
     10_000
 }
 
-fn get_current(open_set: &mut HashSet<usize>, f_scores: &Vec<u32>) -> usize {
-    // get the item in the open set with the smallest fscore
+// fn get_current(open_set: &mut HashSet<usize>, f_scores: &Vec<u32>) -> usize {
+//     // get the item in the open set with the smallest fscore
 
-    let mut lowest = u32::MAX; // big number for default case
-    let mut current_lowest = 0;
+//     let mut lowest = u32::MAX; // big number for default case
+//     let mut current_lowest = 0;
 
-    for &i in open_set.iter() {
-        if f_scores[i] < lowest {
-            lowest = f_scores[i];
-            current_lowest = i;
-        }
-    }
+//     for &i in open_set.iter() {
+//         if f_scores[i] < lowest {
+//             lowest = f_scores[i];
+//             current_lowest = i;
+//         }
+//     }
 
-    open_set.remove(&current_lowest);
-    current_lowest
-}
+//     open_set.remove(&current_lowest);
+//     current_lowest
+// }
 
-fn get_path(came_from: &Vec<Option<usize>>, current: usize) -> u32 {
+fn get_path(came_from: &[Option<usize>], current: usize) -> u32 {
     let mut count = 0;
     let mut curr_i = current;
     while let Some(i) = came_from[curr_i] {
@@ -334,10 +342,40 @@ fn get_left_index(i: usize, width: usize) -> Option<usize> {
 fn valid_neighbour(my_value: u32, their_value: u32) -> bool {
     if their_value <= my_value {
         true
-    } else if their_value - my_value == 1 {
-        true
     } else {
-        false
+        their_value - my_value == 1
+    } 
+}
+
+
+struct HeapNode {
+    value: u32,
+    index: usize,
+}
+
+impl HeapNode {
+    fn new(value: u32, index: usize) -> Self {
+        HeapNode { value, index }
+    }
+}
+
+impl PartialEq for HeapNode {
+    fn eq(&self, other: &Self) -> bool {
+        self.value == other.value && self.index == other.index
+    }
+}
+
+impl Eq for HeapNode {}
+
+impl PartialOrd for HeapNode {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        other.value.partial_cmp(&self.value)
+    }
+}
+
+impl Ord for HeapNode {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        other.value.cmp(&self.value)
     }
 }
 
