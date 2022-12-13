@@ -1,3 +1,5 @@
+pub mod bin;
+
 pub fn process_part1(_input: &str) -> String {
     "works".to_string()
 }

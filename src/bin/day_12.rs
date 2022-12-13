@@ -3,7 +3,7 @@ use std::{
     fs,
 };
 
-fn main() {
+pub fn main() {
     let input = fs::read_to_string("./inputs/day_12_input.txt").unwrap();
 
     println!("{}", part_1(&input)); // 350
@@ -16,10 +16,8 @@ fn part_1(input: &str) -> u32 {
 
     // do I have to implement a*?
     // would flow field work?
-    // let characters: Vec<char> = input.chars().collect();
 
     let width = input.lines().next().unwrap().trim().len();
-    dbg!(width);
 
     let mut nodes: Vec<Node> = input
         .chars()
@@ -78,24 +76,8 @@ fn part_1(input: &str) -> u32 {
         }
     }
 
-    dbg!(start_index, end_index);
-
     // a* with the heuristic being your value?
     // from a=1, it will take at least 25 moves
-    // for i in 0..nodes.len() {
-    //     println!("{:?}", nodes[i].neighbour_indicies);
-    // }
-
-    // start at start_index
-    // are you at the end?
-    // no?
-    // add neighbours to the open set
-    // add self to closed set
-    // find smallest neighbour
-    // that's the new next
-    // next is the lowest f_score
-    // f_score is g + h
-    // g is current cost
 
     get_path_length(&nodes, start_index, end_index)
 }
@@ -109,7 +91,6 @@ fn part_2(input: &str) -> u32 {
     // let characters: Vec<char> = input.chars().collect();
 
     let width = input.lines().next().unwrap().trim().len();
-    dbg!(width);
 
     let mut nodes: Vec<Node> = input
         .chars()
@@ -136,7 +117,6 @@ fn part_2(input: &str) -> u32 {
         })
         .collect();
 
-    let mut start_index = 0;
     let mut end_index = 0;
 
     let mut start_indicies = Vec::new();
@@ -144,7 +124,6 @@ fn part_2(input: &str) -> u32 {
     for i in 0..nodes.len() {
         match nodes[i].sequence {
             Sequence::Start => {
-                start_index = i;
                 start_indicies.push(i);
             }
             Sequence::End => end_index = i,
@@ -173,27 +152,8 @@ fn part_2(input: &str) -> u32 {
         }
     }
 
-    dbg!(start_index, end_index);
-
     // a* with the heuristic being your value?
     // from a=1, it will take at least 25 moves
-    // for i in 0..nodes.len() {
-    //     println!("{:?}", nodes[i].neighbour_indicies);
-    // }
-
-    // start at start_index
-    // are you at the end?
-    // no?
-    // add neighbours to the open set
-    // add self to closed set
-    // find smallest neighbour
-    // that's the new next
-    // next is the lowest f_score
-    // f_score is g + h
-    // g is current cost
-
-    // get_path_length(&nodes, start_index, end_index);
-    dbg!(&start_indicies.len());
 
     let mut shortest_len = 600;
     let mut lengths = Vec::new();
@@ -204,7 +164,6 @@ fn part_2(input: &str) -> u32 {
             shortest_len = len;
         }
     }
-    // dbg!(lengths);
 
     shortest_len
 }
@@ -219,7 +178,6 @@ fn get_path_length(nodes: &Vec<Node>, start_index: usize, end_index: usize) -> u
     let mut current_heap_node;
 
     let mut closed_set = HashSet::new();
-    // closed_set.insert(current);
 
     let mut count = 0;
 
@@ -230,18 +188,15 @@ fn get_path_length(nodes: &Vec<Node>, start_index: usize, end_index: usize) -> u
 
     while !open_set.is_empty() {
         count += 1;
-        // dbg!(count);
         if count > 10_000 {
             print!("Infinite Loop");
             return 0;
         }
-        // current = open_set.pop().unwrap();
-        // current = get_current(&mut open_set, &f_scores);
+
         current_heap_node = open_heap.pop().unwrap();
         current = current_heap_node.index;
         open_set.remove(&current);
 
-        // println!("Current: {}, value: {}", current, nodes[current].value);
         closed_set.insert(current);
 
         if current == end_index {
@@ -271,28 +226,10 @@ fn get_path_length(nodes: &Vec<Node>, start_index: usize, end_index: usize) -> u
     10_000
 }
 
-// fn get_current(open_set: &mut HashSet<usize>, f_scores: &Vec<u32>) -> usize {
-//     // get the item in the open set with the smallest fscore
-
-//     let mut lowest = u32::MAX; // big number for default case
-//     let mut current_lowest = 0;
-
-//     for &i in open_set.iter() {
-//         if f_scores[i] < lowest {
-//             lowest = f_scores[i];
-//             current_lowest = i;
-//         }
-//     }
-
-//     open_set.remove(&current_lowest);
-//     current_lowest
-// }
-
 fn get_path(came_from: &[Option<usize>], current: usize) -> u32 {
     let mut count = 0;
     let mut curr_i = current;
     while let Some(i) = came_from[curr_i] {
-        // println!("Path: {}", i);
         curr_i = i;
         count += 1;
     }
@@ -344,9 +281,8 @@ fn valid_neighbour(my_value: u32, their_value: u32) -> bool {
         true
     } else {
         their_value - my_value == 1
-    } 
+    }
 }
-
 
 struct HeapNode {
     value: u32,
