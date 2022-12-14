@@ -330,34 +330,46 @@ fn build_symbols_stack(symbol_arr: &Vec<Symbol>) -> Vec<Signal> {
                 println!("Start");
                 stack.push(current);
                 let v1 = Vec::new();
+                // current.push(Signal::List(v1));
                 // stack.push(v1);
                 current = v1;
             },
             Symbol::End => {
                 println!("End");
+                
+                let ender = Signal::List(current);
+                v.push(ender);
+
                 let popped = stack.pop().unwrap();
-                if popped.len() > 0 {
-                    v.push(Signal::List( popped));
-                }
+                // for item in popped {
+                //     current.push(item);
+                // }
+                println!("popped = {:?}", popped);
+                current = popped;
+                // v.push(current);
+
+                // if popped.len() > 0 {
+                //     v.push(Signal::List( popped));
+                // }
                 // v.push(Signal::List(current));
             },
             Symbol::Value(val) => {
                 println!("Push {}", val);
 
-                let mut stack_top = stack.pop().unwrap();
-                stack_top.push(Signal::Number(val));
-                stack.push(stack_top);
+                // let mut stack_top = stack.pop().unwrap();
+                // stack_top.push(Signal::Number(val));
+                // stack.push(stack_top);
 
-                // current.push(Signal::Number(val));
+                current.push(Signal::Number(val));
             },
             Symbol::Empty => {
                 println!("Empty");
 
-                let mut stack_top = stack.pop().unwrap();
-                stack_top.push(Signal::Empty);
-                stack.push(stack_top);
+                // let mut stack_top = stack.pop().unwrap();
+                // stack_top.push(Signal::Empty);
+                // stack.push(stack_top);
 
-                // current.push(Signal::Empty);
+                current.push(Signal::Empty);
             },
         }
     }
@@ -497,15 +509,20 @@ mod tests {
         v.push(e);
 
         // [[1],[2,3,4]]
-        let mut v = Vec::new();
-        let a = Signal::List(vec![Signal::Number(1)]);
-        let mut v2 = Vec::new();
-        v2.push(Signal::Number(2));
-        v2.push(Signal::Number(3));
-        v2.push(Signal::Number(4));
-        let b = Signal::List(v2);
+        let mut v = Vec::new();    // start
+        let mut v1 = Vec::new();   // [
+        v1.push(Signal::Number(1));             // 1
+        let a = Signal::List(v1);       // ]
         v.push(a);
+
+        let mut v2 = Vec::new();    // [
+        v2.push(Signal::Number(2));             // 2
+        v2.push(Signal::Number(3));             // 3
+        v2.push(Signal::Number(4));             // 4
+        let b = Signal::List(v2);       // ]
         v.push(b);
+        println!("{:?}", Signal::List(v));      // ]
+        // List([List([Number(1)]), List([Number(2), Number(3), Number(4)])])
     }
 
     #[test]
