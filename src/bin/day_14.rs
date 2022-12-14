@@ -3,7 +3,9 @@ use std::fs;
 fn main() {
     let input = fs::read_to_string("./inputs/day_14_input.txt").unwrap();
 
-    println!("{}", part_1(&input));
+    // println!("{}", part_1(&input));
+    // 28822 too high
+    println!("{}", part_2(&input)); // 28821
 }
 
 fn part_1(_input: &str) -> u32 {
@@ -13,6 +15,43 @@ fn part_1(_input: &str) -> u32 {
     // x: 492 - 562, y: 13 - 173
 
     simulate_sand_count(_input, 492, 562, 173)
+
+    
+}
+
+fn part_2(_input: &str) -> u32 {
+    // test input
+    // x: 494-503, y: 4-9
+    // real input:
+    // x: 492 - 562, y: 13 - 173
+
+
+    // I don't think I can assume any walls
+    // so I need to simulate sand outside the normal edges.
+    // do I just make the grid arbitrarily large? Prob not
+    // should I make a hashset of each material position?
+    // instead of grid[y][x], set.get((x,y)) == rock | sand
+
+    // is there a trick to it?
+    // like can I mathematically calculate this without simulating?
+
+    // underneath each 'floor' there is a pattern
+    // ###### 6
+    // O....O 4 air
+    // OO..OO 2 air
+    // OOOOOO
+
+    // there's some formula for a triangle with infinite floor and no obstacles
+    // based on height
+    // then just need to subtract all the gaps
+
+    // can I just simulate with walls
+    // and then add what would be outside the walls in the final calc?
+    // possibly
+
+    // or I can just brute force it and keep expanding the grid size
+
+    simulate_sand_count_with_floor(_input, 252, 762, 173)
 
     
 }
@@ -43,6 +82,43 @@ fn simulate_sand_count(input: &str, min_x: usize, max_x: usize, max_y: usize) ->
     count += drop_sand(&mut grid);
     count += drop_sand(&mut grid);
 
+    display_grid(&grid);
+
+    count
+    
+}
+
+fn simulate_sand_count_with_floor(input: &str, min_x: usize, max_x: usize, max_y: usize) -> u32 {
+    let lines = input.lines();
+
+    let width = max_x - min_x + 1;
+    let height = max_y + 1;
+    println!("Width: {}, Height: {}", width, height);
+    let mut grid = get_empty_material_grid(width, height+2);
+
+    grid[0][500 - min_x] = Material::Source;
+    grid[height+1] = vec![Material::Rock; width];
+
+    for line in lines {
+        let points_strings = line.split(" -> ");
+        let points: Vec<Point> = points_strings.map(|x| Point::from_str(x, min_x)).collect();
+        // println!("{:?}", points);
+
+        for i in 0..(points.len() - 1) {
+            fill_rocks(&mut grid, points[i], points[i + 1]);
+        }
+    }
+
+    // display_grid(&grid);
+
+    let mut count = drop_sand(&mut grid);
+
+    // count += drop_sand(&mut grid);
+    // count += drop_sand(&mut grid);
+    // count += drop_sand(&mut grid);
+
+    display_grid(&grid);
+
     count
     
 }
@@ -63,9 +139,18 @@ fn drop_sand(grid: &mut Vec<Vec<Material>>) -> u32 {
     // println!("Source: {}, {}", source_x, source_y);
     let mut x = source_x;
     let mut y = source_y;
-    'outer: for _ in 0..300 {
+    'outer: for _ in 0..30000 {
         x = source_x;
         y = source_y;
+
+        if grid[y+1][x] == Material::Sand &&
+        grid[y+1][x-1] == Material::Sand &&
+        grid[y+1][x+1] == Material::Sand {
+            println!("Source blocked");
+            sand_count += 1;
+            break;
+        }
+        
 
         loop {
             if y + 1 >= grid.len() {
@@ -85,7 +170,8 @@ fn drop_sand(grid: &mut Vec<Vec<Material>>) -> u32 {
                             // fall off the edge
                             println!("Fell out left");
 
-                            break;
+                            break 'outer;
+
                         }
                         match grid[y + 1][x - 1] {
                             Material::Air => {
@@ -94,11 +180,12 @@ fn drop_sand(grid: &mut Vec<Vec<Material>>) -> u32 {
                                 continue;
                             }
                             _ => {
-                                if x == width {
+                                if x == (width-1) {
                                     // fall off the right side
                                     println!("Fell out right");
 
-                                    break;
+                                    break 'outer;
+
                                 }
                                 match grid[y + 1][x + 1] {
                                     Material::Air => {
@@ -121,7 +208,7 @@ fn drop_sand(grid: &mut Vec<Vec<Material>>) -> u32 {
             }
         }
     }
-    display_grid(&grid);
+    // display_grid(&grid);
     sand_count
 }
 
@@ -196,18 +283,41 @@ fn fill_rocks(grid: &mut Vec<Vec<Material>>, start: Point, end: Point) {
 }
 
 fn display_grid(grid: &Vec<Vec<Material>>) {
+
+    let window = 250;
+
     for row in grid {
-        let mut row_out = "".to_string();
-        for item in row {
-            let letter = match item {
-                Material::Air => ".",
-                Material::Rock => "#",
-                Material::Sand => "O",
-                Material::Source => "+",
-            };
-            row_out = format!("{}{}", row_out, letter);
+
+        let len = row.len();
+        if len > window {
+            let edge = (len - window) / 2;
+            let mut row_out = "".to_string();
+            for item in &row[edge..(len-edge)] {
+                let letter = match item {
+                    Material::Air => ".",
+                    Material::Rock => "#",
+                    Material::Sand => "O",
+                    Material::Source => "+",
+                };
+                row_out = format!("{}{}", row_out, letter);
+            }
+            println!("{}", row_out);
+
+        } else {
+            let mut row_out = "".to_string();
+            for item in row {
+                let letter = match item {
+                    Material::Air => ".",
+                    Material::Rock => "#",
+                    Material::Sand => "O",
+                    Material::Source => "+",
+                };
+                row_out = format!("{}{}", row_out, letter);
+            }
+            println!("{}", row_out);
         }
-        println!("{}", row_out);
+
+        
     }
 }
 
@@ -224,6 +334,14 @@ mod tests {
         // test input
         // x: 494-503, y: 4-9
         assert_eq!(24, simulate_sand_count(&BASIC_INPUT_DAY_14, 494, 503, 9));
+    }
+
+    #[test]
+    fn part_2_works() {
+        // test input
+        // x: 494-503, y: 4-9
+        
+        assert_eq!(93, simulate_sand_count_with_floor(&BASIC_INPUT_DAY_14, 394, 603, 9));
     }
 
     #[test]
@@ -325,5 +443,20 @@ mod tests {
 
         let grid = get_empty_material_grid(width, height);
         display_grid(&grid);
+    }
+
+    #[test]
+    fn test_display_middle() {
+        let v = vec![1,2,3,4,5,6,7,8,9,10];
+        let window = 5;
+
+        let len = v.len();
+        if len > window {
+            let edge = (len - window) / 2;
+            println!("v: {:?}", &v[edge..len-edge]);
+
+        }
+
+        println!("v: {:?}", &v[3..5]);
     }
 }
