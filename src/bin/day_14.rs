@@ -3,8 +3,7 @@ use std::fs;
 fn main() {
     let input = fs::read_to_string("./inputs/day_14_input.txt").unwrap();
 
-    // println!("{}", part_1(&input));
-    // 28822 too high
+    println!("{}", part_1(&input));
     println!("{}", part_2(&input)); // 28821
 }
 
@@ -15,8 +14,6 @@ fn part_1(_input: &str) -> u32 {
     // x: 492 - 562, y: 13 - 173
 
     simulate_sand_count(_input, 492, 562, 173)
-
-    
 }
 
 fn part_2(_input: &str) -> u32 {
@@ -24,7 +21,6 @@ fn part_2(_input: &str) -> u32 {
     // x: 494-503, y: 4-9
     // real input:
     // x: 492 - 562, y: 13 - 173
-
 
     // I don't think I can assume any walls
     // so I need to simulate sand outside the normal edges.
@@ -52,8 +48,6 @@ fn part_2(_input: &str) -> u32 {
     // or I can just brute force it and keep expanding the grid size
 
     simulate_sand_count_with_floor(_input, 252, 762, 173)
-
-    
 }
 
 fn simulate_sand_count(input: &str, min_x: usize, max_x: usize, max_y: usize) -> u32 {
@@ -68,14 +62,11 @@ fn simulate_sand_count(input: &str, min_x: usize, max_x: usize, max_y: usize) ->
     for line in lines {
         let points_strings = line.split(" -> ");
         let points: Vec<Point> = points_strings.map(|x| Point::from_str(x, min_x)).collect();
-        // println!("{:?}", points);
 
         for i in 0..(points.len() - 1) {
             fill_rocks(&mut grid, points[i], points[i + 1]);
         }
     }
-
-    // display_grid(&grid);
 
     let mut count = drop_sand(&mut grid);
 
@@ -85,7 +76,6 @@ fn simulate_sand_count(input: &str, min_x: usize, max_x: usize, max_y: usize) ->
     display_grid(&grid);
 
     count
-    
 }
 
 fn simulate_sand_count_with_floor(input: &str, min_x: usize, max_x: usize, max_y: usize) -> u32 {
@@ -93,34 +83,25 @@ fn simulate_sand_count_with_floor(input: &str, min_x: usize, max_x: usize, max_y
 
     let width = max_x - min_x + 1;
     let height = max_y + 1;
-    println!("Width: {}, Height: {}", width, height);
-    let mut grid = get_empty_material_grid(width, height+2);
+    let mut grid = get_empty_material_grid(width, height + 2);
 
     grid[0][500 - min_x] = Material::Source;
-    grid[height+1] = vec![Material::Rock; width];
+    grid[height + 1] = vec![Material::Rock; width];
 
     for line in lines {
         let points_strings = line.split(" -> ");
         let points: Vec<Point> = points_strings.map(|x| Point::from_str(x, min_x)).collect();
-        // println!("{:?}", points);
 
         for i in 0..(points.len() - 1) {
             fill_rocks(&mut grid, points[i], points[i + 1]);
         }
     }
 
-    // display_grid(&grid);
-
-    let mut count = drop_sand(&mut grid);
-
-    // count += drop_sand(&mut grid);
-    // count += drop_sand(&mut grid);
-    // count += drop_sand(&mut grid);
+    let count = drop_sand(&mut grid);
 
     display_grid(&grid);
 
     count
-    
 }
 
 fn drop_sand(grid: &mut Vec<Vec<Material>>) -> u32 {
@@ -136,25 +117,23 @@ fn drop_sand(grid: &mut Vec<Vec<Material>>) -> u32 {
 
     let mut sand_count = 0;
 
-    // println!("Source: {}, {}", source_x, source_y);
-    let mut x = source_x;
-    let mut y = source_y;
+    let mut x; //  = source_x;
+    let mut y; // = source_y;
     'outer: for _ in 0..30000 {
         x = source_x;
         y = source_y;
 
-        if grid[y+1][x] == Material::Sand &&
-        grid[y+1][x-1] == Material::Sand &&
-        grid[y+1][x+1] == Material::Sand {
+        if grid[y + 1][x] == Material::Sand
+            && grid[y + 1][x - 1] == Material::Sand
+            && grid[y + 1][x + 1] == Material::Sand
+        {
             println!("Source blocked");
             sand_count += 1;
             break;
         }
-        
 
         loop {
             if y + 1 >= grid.len() {
-                // fall out bottom
                 println!("Fell out bottom");
                 break 'outer;
             }
@@ -166,12 +145,8 @@ fn drop_sand(grid: &mut Vec<Vec<Material>>) -> u32 {
                     }
                     Material::Rock | Material::Sand => {
                         if x == 0 {
-                            // ??
-                            // fall off the edge
                             println!("Fell out left");
-
                             break 'outer;
-
                         }
                         match grid[y + 1][x - 1] {
                             Material::Air => {
@@ -180,25 +155,18 @@ fn drop_sand(grid: &mut Vec<Vec<Material>>) -> u32 {
                                 continue;
                             }
                             _ => {
-                                if x == (width-1) {
-                                    // fall off the right side
+                                if x == (width - 1) {
                                     println!("Fell out right");
-
                                     break 'outer;
-
                                 }
-                                match grid[y + 1][x + 1] {
-                                    Material::Air => {
-                                        y += 1;
-                                        x += 1;
-                                        continue;
-                                    }
-                                    _ => {}
+                                if grid[y + 1][x + 1] == Material::Air {
+                                    y += 1;
+                                    x += 1;
+                                    continue;
                                 }
                             }
                         }
 
-                        // println!("Hit something");
                         grid[y][x] = Material::Sand;
                         sand_count += 1;
                         break;
@@ -208,7 +176,6 @@ fn drop_sand(grid: &mut Vec<Vec<Material>>) -> u32 {
             }
         }
     }
-    // display_grid(&grid);
     sand_count
 }
 
@@ -227,6 +194,7 @@ impl Point {
         }
     }
 
+    #[allow(unused)]
     fn new(x: usize, y: usize) -> Self {
         Point { x, y }
     }
@@ -242,7 +210,7 @@ enum Material {
 
 fn get_empty_material_grid(width: usize, height: usize) -> Vec<Vec<Material>> {
     let mut v = Vec::new();
-    for i in 0..height {
+    for _ in 0..height {
         let vh = vec![Material::Air; width];
         v.push(vh);
     }
@@ -250,13 +218,10 @@ fn get_empty_material_grid(width: usize, height: usize) -> Vec<Vec<Material>> {
     v
 }
 
-fn fill_rocks(grid: &mut Vec<Vec<Material>>, start: Point, end: Point) {
-    // grid[start.y][start.x] = Material::Rock;
-    // grid[end.y][end.x] = Material::Rock;
-    // println!("{:?} -> {:?}", start, end);
-
-    let mut min_x = 0;
-    let mut max_x = 0;
+#[allow(clippy::needless_range_loop)]
+fn fill_rocks(grid: &mut [Vec<Material>], start: Point, end: Point) {
+    let min_x;
+    let max_x;
     if start.x < end.x {
         min_x = start.x;
         max_x = end.x;
@@ -265,8 +230,8 @@ fn fill_rocks(grid: &mut Vec<Vec<Material>>, start: Point, end: Point) {
         max_x = start.x;
     }
 
-    let mut min_y = 0;
-    let mut max_y = 0;
+    let min_y;
+    let max_y;
     if start.y < end.y {
         min_y = start.y;
         max_y = end.y;
@@ -283,16 +248,14 @@ fn fill_rocks(grid: &mut Vec<Vec<Material>>, start: Point, end: Point) {
 }
 
 fn display_grid(grid: &Vec<Vec<Material>>) {
-
     let window = 250;
 
     for row in grid {
-
         let len = row.len();
         if len > window {
             let edge = (len - window) / 2;
             let mut row_out = "".to_string();
-            for item in &row[edge..(len-edge)] {
+            for item in &row[edge..(len - edge)] {
                 let letter = match item {
                     Material::Air => ".",
                     Material::Rock => "#",
@@ -302,7 +265,6 @@ fn display_grid(grid: &Vec<Vec<Material>>) {
                 row_out = format!("{}{}", row_out, letter);
             }
             println!("{}", row_out);
-
         } else {
             let mut row_out = "".to_string();
             for item in row {
@@ -316,8 +278,6 @@ fn display_grid(grid: &Vec<Vec<Material>>) {
             }
             println!("{}", row_out);
         }
-
-        
     }
 }
 
@@ -340,15 +300,18 @@ mod tests {
     fn part_2_works() {
         // test input
         // x: 494-503, y: 4-9
-        
-        assert_eq!(93, simulate_sand_count_with_floor(&BASIC_INPUT_DAY_14, 394, 603, 9));
+
+        assert_eq!(
+            93,
+            simulate_sand_count_with_floor(&BASIC_INPUT_DAY_14, 394, 603, 9)
+        );
     }
 
     #[test]
     fn point_from_str() {
         let input = "498,4";
 
-        assert_eq!(Point::new(0, 4), Point::from_str(input, 498));
+        assert_eq!(Point { x: 0, y: 4 }, Point::from_str(input, 498));
     }
 
     #[test]
@@ -447,14 +410,13 @@ mod tests {
 
     #[test]
     fn test_display_middle() {
-        let v = vec![1,2,3,4,5,6,7,8,9,10];
+        let v = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         let window = 5;
 
         let len = v.len();
         if len > window {
             let edge = (len - window) / 2;
-            println!("v: {:?}", &v[edge..len-edge]);
-
+            println!("v: {:?}", &v[edge..len - edge]);
         }
 
         println!("v: {:?}", &v[3..5]);
