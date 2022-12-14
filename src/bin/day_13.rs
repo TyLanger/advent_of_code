@@ -40,7 +40,6 @@ fn part_1(input: &str) -> u32 {
     count
 }
 
-
 #[allow(unused)]
 fn in_right_order(v1: &[u32], v2: &[u32]) -> bool {
     for i in 0..v1.len() {
@@ -219,7 +218,6 @@ enum Symbol {
 
 #[allow(unused)]
 fn parse_input(input: &str) -> Vec<Symbol> {
-
     let numbers: Vec<&str> = input
         .split(&['[', ',', ']'])
         .filter(|x| !x.is_empty())
@@ -248,7 +246,9 @@ fn parse_input(input: &str) -> Vec<Symbol> {
         } else {
             if !number_last {
                 empty = false;
-                v.push(Symbol::Value(numbers[number_index].trim().parse::<u32>().unwrap()));
+                v.push(Symbol::Value(
+                    numbers[number_index].trim().parse::<u32>().unwrap(),
+                ));
                 number_index += 1;
                 number_last = true;
             }
@@ -281,44 +281,44 @@ fn parse_input(input: &str) -> Vec<Symbol> {
 #[allow(unused)]
 fn recurse_symbols(symbol_arr: &Vec<Symbol>, start_index: usize) -> Vec<Signal> {
     let mut v = Vec::new();
-    
+
     let mut skip = 0;
     for i in start_index..symbol_arr.len() {
         // dbg!(&symbol_arr[i]);
-        match symbol_arr[i+skip] {
+        match symbol_arr[i + skip] {
             Symbol::Start => {
                 println!("Start at {}", start_index);
-                let vec = recurse_symbols(symbol_arr, i+1);
+                let vec = recurse_symbols(symbol_arr, i + 1);
                 println!("len {}", &vec.len());
                 skip += &vec.len() + 2;
 
                 let sig = Signal::List(vec);
                 v.push(sig);
-            },
+            }
             Symbol::End => {
                 println!("End at {}", start_index);
 
                 return v;
-            },
+            }
             Symbol::Value(val) => {
                 println!("Push {} at {}", val, start_index);
 
                 v.push(Signal::Number(val));
-            },
+            }
             Symbol::Empty => {
                 println!("Empty at {}", start_index);
 
                 v.push(Signal::Empty);
-            },
+            }
         }
     }
-    
+
     v
 }
 
 #[allow(unused)]
 fn build_symbols_stack(symbol_arr: &Vec<Symbol>) -> Vec<Signal> {
-    let mut v = Vec::new(); 
+    let mut v = Vec::new();
 
     let mut stack = Vec::new();
 
@@ -333,10 +333,10 @@ fn build_symbols_stack(symbol_arr: &Vec<Symbol>) -> Vec<Signal> {
                 // current.push(Signal::List(v1));
                 // stack.push(v1);
                 current = v1;
-            },
+            }
             Symbol::End => {
                 println!("End");
-                
+
                 let ender = Signal::List(current);
                 v.push(ender);
 
@@ -352,7 +352,7 @@ fn build_symbols_stack(symbol_arr: &Vec<Symbol>) -> Vec<Signal> {
                 //     v.push(Signal::List( popped));
                 // }
                 // v.push(Signal::List(current));
-            },
+            }
             Symbol::Value(val) => {
                 println!("Push {}", val);
 
@@ -361,7 +361,7 @@ fn build_symbols_stack(symbol_arr: &Vec<Symbol>) -> Vec<Signal> {
                 // stack.push(stack_top);
 
                 current.push(Signal::Number(val));
-            },
+            }
             Symbol::Empty => {
                 println!("Empty");
 
@@ -370,17 +370,16 @@ fn build_symbols_stack(symbol_arr: &Vec<Symbol>) -> Vec<Signal> {
                 // stack.push(stack_top);
 
                 current.push(Signal::Empty);
-            },
+            }
         }
     }
 
     // for item in stack {
     //     v.push(Signal::List(item));
     // }
-    
+
     v
 }
-
 
 #[derive(Debug)]
 #[allow(unused)]
@@ -509,20 +508,20 @@ mod tests {
         v.push(e);
 
         // [[1],[2,3,4]]
-        let mut v = Vec::new();    // start
-        let mut v1 = Vec::new();   // [
-        v1.push(Signal::Number(1));             // 1
-        let a = Signal::List(v1);       // ]
+        let mut v = Vec::new(); // start
+        let mut v1 = Vec::new(); // [
+        v1.push(Signal::Number(1)); // 1
+        let a = Signal::List(v1); // ]
         v.push(a);
 
-        let mut v2 = Vec::new();    // [
-        v2.push(Signal::Number(2));             // 2
-        v2.push(Signal::Number(3));             // 3
-        v2.push(Signal::Number(4));             // 4
-        let b = Signal::List(v2);       // ]
+        let mut v2 = Vec::new(); // [
+        v2.push(Signal::Number(2)); // 2
+        v2.push(Signal::Number(3)); // 3
+        v2.push(Signal::Number(4)); // 4
+        let b = Signal::List(v2); // ]
         v.push(b);
-        println!("{:?}", Signal::List(v));      // ]
-        // List([List([Number(1)]), List([Number(2), Number(3), Number(4)])])
+        println!("{:?}", Signal::List(v)); // ]
+                                           // List([List([Number(1)]), List([Number(2), Number(3), Number(4)])])
     }
 
     #[test]
@@ -687,7 +686,6 @@ mod tests {
         let parse2 = parse_input(s2);
         println!("{:?}", build_symbols_stack(&parse1));
         println!("{:?}", build_symbols_stack(&parse2));
-
 
         let s1 = "[[1],[2,3,4]]";
         let s2 = "[[1],4]";
