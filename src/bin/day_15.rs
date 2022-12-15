@@ -4,54 +4,26 @@ fn main() {
     let input = fs::read_to_string("./inputs/day_15_input.txt").unwrap();
 
     let now = SystemTime::now();
-    println!("Start: {:?}", now);
 
     println!("{}", part_1(&input)); // 5112034
-                                    // part 1 takes a while to run
-                                    // is that correct?
+
     let mid = SystemTime::now();
     let diff = mid.duration_since(now);
     if let Ok(d) = diff {
-        println!("Start to mid in secs: {:?}", d.as_secs());
+        println!("Part 1 time: {:?}.{:?}", d.as_secs(), d.subsec_millis());
     }
-    println!("After Part 1: {:?}", mid);
+
     println!("{}", part_2(&input)); // 13,172,087,230,812
-    // 100
-    // 100
-    // ????
-    // 300s without stopping???
-    // should 4m * 4m * 26
-    // take that long???
-
-    // does i ever make it to 10_000??
-
-    // maybe it is too long
-
-    // running i 0..1
-    // j 0..4m
-    // takes 5s
-    // 5s x 4m = 5555 hours???
 
     let end = SystemTime::now();
     let diff = end.duration_since(now);
     if let Ok(d) = diff {
-        println!("Start to end in secs: {:?}", d.as_secs());
+        println!(
+            "Start to end in secs: {:?}.{:?}",
+            d.as_secs(),
+            d.subsec_millis()
+        );
     }
-    println!("End: {:?}", end);
-
-
-    // Start: SystemTime { intervals: 133155661742588908 }
-    // 5112034
-    // Start to mid in secs: 11
-    // After Part 1: SystemTime { intervals: 133155661852698865 }
-    // ======= point: Point { x: 3293021, y: 3230812 }
-    // 3293021
-    // Start to end in secs: 13
-    // End: SystemTime { intervals: 133155661874088686 }
-    // real answer: 
-    // 13,172,087,230,812
-    // hacked to work with i32
-    // changed it to u64 and it can output fine
 }
 
 fn part_1(input: &str) -> usize {
@@ -68,13 +40,6 @@ fn part_2(input: &str) -> usize {
 }
 
 fn get_distress_frequency(input: &str, upper_bounds: usize) -> usize {
-    // loop over x..upper_bounds
-    // loop over y..upper_bounds
-    // check the distance to each sensor
-    // is it within range?
-    // move on until we find the 1 position
-    // where it is out of range of each sensor
-
     // calculate each sensor distance
     let mut sensors: Vec<Point> = Vec::new();
     let mut distances: Vec<u32> = Vec::new();
@@ -95,45 +60,6 @@ fn get_distress_frequency(input: &str, upper_bounds: usize) -> usize {
         distances.push(dist);
     }
 
-    // println!("sensors: {:?}", &sensors);
-    // println!("distances: {:?}", &distances);
-    // distances: [7, 1, 3, 4, 4, 5, 9, 10, 3, 8, 6, 5, 1, 7]
-
-    // with upper_bounds = 4m
-    // will take ~5_555 hours
-
-    // for i in 0..upper_bounds {
-    //     if i % 10_000 == 0 {
-    //         println!("{}", i);
-    //     }
-    //     'j_loop: for j in 0..upper_bounds {
-    //         let p = Point {
-    //             x: i as i32,
-    //             y: j as i32,
-    //         };
-    //         for i in 0..sensors.len() {
-    //             let dist = sensors[i].get_distance(&p);
-    //             if dist <= distances[i] {
-    //                 // failed
-    //                 // println!("within range of sensor {}", i);
-    //                 continue 'j_loop;
-    //             }
-    //         }
-    //         println!("======= point: {:?}", p);
-    //         if p.x > 1000 {
-    //             return p.x as usize;
-    //         }
-    //         return p.tuning_freq() as usize;
-    //     }
-    // }
-
-    // how do I do it without looping a bazillion times?
-    // each of the 26 beacons knows where it isn't
-    // intersect each of them?
-    // bounding box 4m x 4m
-    // subtract each diamond
-    // the resulting point is the answer?
-
     // check the edge of each sensor region
 
     for i in 0..sensors.len() {
@@ -142,7 +68,6 @@ fn get_distress_frequency(input: &str, upper_bounds: usize) -> usize {
         let diamond = get_diamond_ring(point, distance + 1, upper_bounds as i32);
 
         'diamond: for p in diamond {
-            // println!("Checking edge point: {:?}", &p);
             for j in 0..sensors.len() {
                 if i == j {
                     continue;
@@ -151,18 +76,15 @@ fn get_distress_frequency(input: &str, upper_bounds: usize) -> usize {
 
                 if dist <= distances[j] {
                     // failed
-                    // println!("within range of sensor {}", i);
                     continue 'diamond;
                 }
             }
             println!("======= point: {:?}", p);
-            // if p.x > 1000 {
-            //     return p.x as usize;
-            // }
             return p.tuning_freq() as usize;
         }
     }
 
+    println!("Failed");
     99
 }
 
@@ -183,12 +105,6 @@ fn get_num_positions_at_row(input: &str, row: usize) -> usize {
     // parse to points
     for line in input.lines() {
         let split_arr: Vec<&str> = line.split(&['=', ',', ':']).collect();
-        // println!("line: {:?}", split_arr);
-        // for item in line.split(&['=',',',':']) {
-        //     if let Ok(num) = item.trim().parse::<i32>() {
-
-        //     }
-        // }
 
         let x1 = split_arr[1].parse::<i32>().unwrap();
         let y1 = split_arr[3].parse::<i32>().unwrap();
@@ -201,12 +117,7 @@ fn get_num_positions_at_row(input: &str, row: usize) -> usize {
         let dist = p1.get_distance(&p2);
         beacon_points.insert(p2);
 
-        // println!("p1: {:?}, p2: {:?} dist: {:?}", &p1, &p2, dist);
-        // println!("Intersect: {}", intersects_row(&p1, dist, row));
-
         if intersects_row(&p1, dist, row) {
-            // now how many times does it intersect?
-            // which points intersect?
             let v = intersection_points(&p1, dist, row);
             for item in v {
                 hits.insert(item);
@@ -214,17 +125,8 @@ fn get_num_positions_at_row(input: &str, row: usize) -> usize {
         }
     }
 
-    // let mut hits: HashSet<Point> = HashSet::new();
-
-    // println!("hits: {:#?}", hits);
-    // let mut v_hits: Vec<&Point> = hits.iter().collect();
-    // v_hits.sort_by(|&a, &b| a.x.cmp(&b.x));
-    // println!("v hits: {:#?}", &v_hits);
-
     // want hits without whatever is in beacon_points
     hits.difference(&beacon_points).count()
-
-    // hits.len()
 }
 
 fn intersects_row(p: &Point, dist: u32, row: usize) -> bool {
@@ -248,15 +150,7 @@ fn intersection_points(p: &Point, dist: u32, row: usize) -> Vec<Point> {
     let i_row = row as i32;
     let row_dist = i_row.abs_diff(p.y);
 
-    // when row dist is 0, push 2 * dist items + 1
-    // when row dist is == dist, push 1 item
-
-    // 15 - 7 = 8
-    // dist - 8 = 1
-    // 16 - 7 = 9
-    // 9 - 9 = 0
     let half_width = dist - row_dist;
-    // println!("half width: {}", half_width);
 
     // all points will have the same row
     // 2x + 1
@@ -265,7 +159,6 @@ fn intersection_points(p: &Point, dist: u32, row: usize) -> Vec<Point> {
     v.push(new_point);
 
     // loop to get each side
-
     for i in 1..=half_width {
         let point = Point {
             x: p.x - i as i32,
@@ -304,11 +197,9 @@ pub fn get_diamond_ring(center: &Point, distance: u32, upper_bounds: i32) -> Vec
     let mut up_x = x as i32;
     let mut up_y = y + distance as i32;
     for _ in 0..distance {
-        if up_x >= 0 && up_y >= 0 {
-            if 0 <= up_x && up_x < upper_bounds && 0 <= up_y && up_y < upper_bounds {
-                v.push(Point { x: up_x, y: up_y });
-            }
-            // v.push(self.get_xy(up_x as usize, up_y as usize));
+        // stay within bounds as per part 2
+        if 0 <= up_x && up_x < upper_bounds && 0 <= up_y && up_y < upper_bounds {
+            v.push(Point { x: up_x, y: up_y });
         }
         // move down right
         up_x += 1;
@@ -318,15 +209,11 @@ pub fn get_diamond_ring(center: &Point, distance: u32, upper_bounds: i32) -> Vec
     let mut right_x = x + distance as i32;
     let mut right_y = y as i32;
     for _ in 0..distance {
-        if right_x >= 0 && right_y >= 0 {
-            if 0 <= right_x && right_x < upper_bounds && 0 <= right_y && right_y < upper_bounds {
-                v.push(Point {
-                    x: right_x,
-                    y: right_y,
-                });
-            }
-
-            // v.push(self.get_xy(right_x as usize, right_y as usize));
+        if 0 <= right_x && right_x < upper_bounds && 0 <= right_y && right_y < upper_bounds {
+            v.push(Point {
+                x: right_x,
+                y: right_y,
+            });
         }
         // move down left
         right_x -= 1;
@@ -336,15 +223,11 @@ pub fn get_diamond_ring(center: &Point, distance: u32, upper_bounds: i32) -> Vec
     let mut down_x = x as i32;
     let mut down_y = y as i32 - distance as i32;
     for _ in 0..distance {
-        if down_x >= 0 && down_y >= 0 {
-            if 0 <= down_x && down_x < upper_bounds && 0 <= down_y && down_y < upper_bounds {
-                v.push(Point {
-                    x: down_x,
-                    y: down_y,
-                });
-            }
-
-            // v.push(self.get_xy(down_x as usize, down_y as usize));
+        if 0 <= down_x && down_x < upper_bounds && 0 <= down_y && down_y < upper_bounds {
+            v.push(Point {
+                x: down_x,
+                y: down_y,
+            });
         }
         // move up left
         down_x -= 1;
@@ -354,14 +237,11 @@ pub fn get_diamond_ring(center: &Point, distance: u32, upper_bounds: i32) -> Vec
     let mut left_x = x as i32 - distance as i32;
     let mut left_y = y as i32;
     for _ in 0..distance {
-        if left_x >= 0 && left_y >= 0 {
-            if 0 <= left_x && left_x < upper_bounds && 0 <= left_y && left_y < upper_bounds {
-                v.push(Point {
-                    x: left_x,
-                    y: left_y,
-                });
-            }
-            // v.push(self.get_xy(left_x as usize, left_y as usize));
+        if 0 <= left_x && left_x < upper_bounds && 0 <= left_y && left_y < upper_bounds {
+            v.push(Point {
+                x: left_x,
+                y: left_y,
+            });
         }
         // move up right
         left_x += 1;
@@ -502,11 +382,8 @@ Sensor at x=20, y=1: closest beacon is at x=15, y=3";
         let h3: HashSet<i32> = HashSet::from([3, 5]);
 
         let h4: HashSet<i32> = h3.intersection(&h2).map(|x| *x).collect();
-        // assert_eq!(h4, [3].iter().collect());
-        // for x in h4.intersection(&h3) {
 
-        // }
-
+        // didn't actually use this method
         assert_eq!(Some(&3), h1.intersection(&h4).next());
     }
 
