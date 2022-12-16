@@ -93,29 +93,100 @@ fn part_1(input: &str) -> u32 {
 
     // depth first
     // can't open the same valve twice
-    let mut evaluated: HashSet<String> = HashSet::new();
-    recursion(&valves, &mut evaluated, "AA".to_string(), 5);
+    let mut opened: HashSet<String> = HashSet::new();
+    let path: Vec<Cave> = Vec::new();
+    let mut best = 0;
+    // depth 24 or 25 should be all I need to get the right value
+    recursion(&valves, opened, "AA".to_string(), 30, &mut best, 0);
 
-    99
+    best
 }
 
-fn recursion(tree: &BTreeMap<String, Valve>, evaluated: &mut HashSet<String>, start: String, depth: u32) {
-    if depth == 0 {
-        // println!("Depth Reached");
+fn recursion(
+    tree: &BTreeMap<String, Valve>,
+    opened: HashSet<String>,
+    start: String,
+    depth: i32,
+    best: &mut u32,
+    current_sum: u32,
+) {
+    // let mut path = path.clone();
+    // path.push(Cave::Move(start.clone()));
+    if depth == 24 && current_sum == 0 {
+        // println!("Quit early if not opening anything");
+        return;
+    } else if depth == 16 && current_sum < 500 {
         return;
     }
-    if !evaluated.insert(start.clone()) {
-        // println!("Already Checked");
-        return;
-    } 
 
-    println!("Start: {:?}, depth: {}", &start, depth);
+    if depth <= 5 {
+        // println!("Depth Reached");
+
+        if current_sum > *best {
+            println!("Changed best: {} -> {}", best, current_sum);
+            *best = current_sum;
+        }
+        return;
+
+        // let mut sum = 0;
+        // for item in &path {
+        //     if let Cave::Open(v) = item {
+        //         sum += v;
+        //     }
+        // }
+        // // if sum > 0 {
+        // //     println!("Depth reached. Path: {:?} Sum: {:?}", &path, sum);
+        // // }
+        // if sum > *best {
+        //     println!("Depth reached. Path: {:?} Sum: {:?}", &path, sum);
+        //     println!("Changed best: {} -> {}", best, sum);
+        //     *best = sum;
+        // }
+        // return;
+    }
+    // if !evaluated.insert(start.clone()) {
+    //     // println!("Already Checked");
+    //     // return;
+    // }
+
+    // println!("Start: {:?}, depth: {}", &start, depth);
 
     let valve = tree.get(&start).unwrap();
+
     for name in &valve.neighbours {
+        for i in 0..2 {
+            if i == 0 {
+                if valve.rate > 0 {
+                    let mut new_open = opened.clone();
+                    let depth = depth - 1;
+                    if !new_open.insert(start.clone()) {
+                        // if you try to open the same valve twice
+                        return;
+                    }
+                    // don't open the same valve twice somehow
+                    // let mut open_path = path.clone();
+                    let value = depth as u32 * valve.rate;
+                    // open_path.push(Cave::Open(depth as u32 * valve.rate));
+                    let new_sum = current_sum + value;
+                    recursion(&tree, new_open, name.clone(), depth - 1, best, new_sum);
+                }
+            } else {
+                recursion(
+                    &tree,
+                    opened.clone(),
+                    name.clone(),
+                    depth - 1,
+                    best,
+                    current_sum,
+                );
+            }
+        }
         // println!("Name: {:?}", &name);
-        
-        recursion(&tree, evaluated, name.clone(), depth - 1);
+        // if valve.rate > 0 {
+        //     // open the valve
+        //     path.push(format!("Opened {:?}", start.clone()));
+        //     recursion(&tree, evaluated, name.clone(), depth - 1, path.clone());
+        // }
     }
 }
 
@@ -158,6 +229,22 @@ fn parse_into_b_tree_map(input: &str) -> BTreeMap<String, Valve> {
     valves
 }
 
+fn calculate_total_flow(path: Vec<Cave>) -> u32 {
+    let mut sum = 0;
+    for item in &path {
+        if let Cave::Open(v) = item {
+            sum += v;
+        }
+    }
+    sum
+}
+
+#[derive(Clone, Debug)]
+enum Cave {
+    Move(String),
+    Open(u32),
+}
+
 #[derive(Debug)]
 struct Valve {
     rate: u32,
@@ -182,6 +269,9 @@ Valve JJ has flow rate=21; tunnel leads to valve II";
 
     #[test]
     fn part_1_works() {
+        // finished in 754.99s
+        // got 1710 (wrong)
+        // off by 1 is 1732
         assert_eq!(1651, part_1(&BASIC_INPUT_DAY_16));
     }
 
@@ -190,6 +280,33 @@ Valve JJ has flow rate=21; tunnel leads to valve II";
         let s = "DD";
         let split: Vec<&str> = s.split(", ").collect();
         println!("split: {:?}", split);
+    }
+
+    #[test]
+    fn test_total_flow() {
+        let path = vec![
+            Cave::Move("DD".to_string()),
+            Cave::Open(20 * 28),
+            Cave::Open(13 * 25),
+            Cave::Open(21 * 21),
+            Cave::Open(22 * 13),
+            Cave::Open(3 * 9),
+            Cave::Open(2 * 6),
+        ];
+
+        assert_eq!(1651, calculate_total_flow(path));
+
+        let path = vec![
+            Cave::Move("DD".to_string()),
+            Cave::Open(20 * 29), // 812
+            Cave::Open(13 * 26), // 338
+            Cave::Open(21 * 22), // 462
+            Cave::Open(22 * 14), // 308
+            Cave::Open(3 * 10),  // 30
+            Cave::Open(2 * 7),   // 14
+        ];
+        // 1732
+        println!("Off by 1 {:?}", calculate_total_flow(path));
     }
 
     #[test]
@@ -248,7 +365,7 @@ Valve JJ has flow rate=21; tunnel leads to valve II";
         // g.extend_with_edges(&[
         //     (a, b), (a, c),
         //     (c, d)
-            
+
         // ]);
 
         println!("graph: {:?}", g);
@@ -293,7 +410,7 @@ Valve JJ has flow rate=21; tunnel leads to valve II";
         let mut dfs = Dfs::new(&g, NodeIndex::new(0));
         while let Some(nx) = dfs.next(&g) {
             println!("{:?}", nx);
-            println!("Weight: {:?}",  g.node_weight(nx));
+            println!("Weight: {:?}", g.node_weight(nx));
         }
     }
 }
