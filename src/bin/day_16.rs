@@ -180,7 +180,6 @@ fn part_2(input: &str) -> u32 {
     // Non-zero rates sorted: [22, 21, 20, 13, 3, 2] = 6
     // Non-zero rates sorted: [22, 21, 20, 19, 18, 17, 16, 15, 13, 11, 10, 9, 7, 6, 5] = 15
 
-
     let mut run_count = 0;
 
     let dist_lookup = create_dist_lookup(&valves);
