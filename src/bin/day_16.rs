@@ -95,7 +95,135 @@ fn part_1(input: &str) -> u32 {
 }
 
 fn part_2(input: &str) -> u32 {
-    99
+    // take 4 min to teach the elephant at the start
+
+    // what changes here?
+    // can open 2 valves at a time.
+    // need a path for me and a path for the elephant.
+    // both go to ~half of them.
+
+    // pick a random set of valves to go to.
+    // give to one. Give the rest to the other.
+    // calculate the best order for this smaller subset
+    // using the same logic as part 1
+    // then check every combination I could give to each of them.
+
+    // I open valves AA, BB, CC
+    // El opens valves DD, EE, FF
+    // get optimal order
+    // save result
+    // Then try for I open AA, BB, DD
+    // el opens CC, EE, FF
+    // me opening DD, EE, FF
+    // el opening AA, BB, CC
+    // is the same as case 1
+
+    // if there were only 2 valves, we'd each take 1
+    // if there were 3, with dists: A=1, B=2, c=4
+    // one does A, B. Other does C
+    // maybe not. B would need to be 2 from A
+
+    // how many ways can I split the input?
+    // there are 15 'real' valves
+    // with [A, B, C, D], there is
+    // [A, B] && [C, D]
+    // [A, C] && [B, D]
+    // [A, D] && [B, C]
+    // [A] && [B, C, D]
+    // [B] && [A, C, D]
+    // [C] && [A, B, D]
+    // [D] && [A, B, C]
+    // 7 combinations at least
+
+    // with 15, it's maybe half of ~32_000?
+    // with 15 items, that's a 15digit binary number (~32_000)
+    // ex. 1001000101010
+    //  each 1 is a visit for me. each 0 is a visit for the elephant
+    // for i in 0..(0b111_1111_1111_1111 / 2)
+    // this is the unique combinations
+
+    // version 2
+    // choose 2 at each point
+    // part 1 path:
+    // AA -> CC -> EE -> JJ, etc
+    // part 2
+    // AA -> CC,EE -> JJ,DD, etc
+
+    // for (i, item) in non_zero_rates.iter().enumerate() {
+    // for (j, item) in i..len() {
+
+    // how to find the right split?
+    // non_zero_valves = v[name; 15]
+    // split at 7
+    // run
+    // split at 6
+    // run
+    // it's probably fastest to split in half
+    // or rather probably best to both finish at the same time.
+    // want close to same length paths
+
+    let valves = parse_into_b_tree_map(&input);
+    // this is sorted by the name
+    // AA, then BB, then CC, etc.
+
+    let mut rates = Vec::new();
+    let mut non_zero_rates = Vec::new();
+
+    for (name, valve) in &valves {
+        if valve.rate > 0 {
+            rates.push(valve.rate);
+            non_zero_rates.push(name.clone());
+        }
+    }
+    rates.sort_by(|a, b| b.cmp(&a));
+    println!("Non-zero rates sorted: {:?}", rates);
+    // Non-zero rates sorted: [22, 21, 20, 13, 3, 2] = 6
+    // Non-zero rates sorted: [22, 21, 20, 19, 18, 17, 16, 15, 13, 11, 10, 9, 7, 6, 5] = 15
+
+
+    let mut run_count = 0;
+
+    let dist_lookup = create_dist_lookup(&valves);
+
+    let time = 26;
+
+    let len = non_zero_rates.len();
+    let half_len = len / 2;
+    let my_visits: Vec<String> = non_zero_rates[0..half_len].to_vec();
+    let elephant_visits: Vec<String> = non_zero_rates[half_len..len].to_vec();
+    println!("my visits: {:?}", &my_visits);
+    println!("elephant visits: {:?}", &elephant_visits);
+
+    // optimal is [DD, HH, EE] [JJ, BB, CC]
+    let cheat_1 = vec!["DD".to_string(), "HH".to_string(), "EE".to_string()];
+    let cheat_2 = vec!["JJ".to_string(), "BB".to_string(), "CC".to_string()];
+
+    let mut my_best = 0;
+    let mut el_best = 0;
+    recursion_with_dist_lookup(
+        &valves,
+        &dist_lookup,
+        cheat_1,
+        "AA".to_string(),
+        time,
+        0,
+        &mut my_best,
+        &mut run_count,
+    );
+    recursion_with_dist_lookup(
+        &valves,
+        &dist_lookup,
+        cheat_2,
+        "AA".to_string(),
+        time,
+        0,
+        &mut el_best,
+        &mut run_count,
+    );
+
+    println!("Runs: {}", run_count);
+
+    my_best + el_best
 }
 
 fn recursion_with_dist_lookup(
@@ -272,8 +400,6 @@ impl StringPair {
 
 #[cfg(test)]
 mod tests {
-
-    // use std::collections::HashMap;
 
     use super::*;
 
