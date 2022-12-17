@@ -1,16 +1,14 @@
 use petgraph::algo::dijkstra;
-// use petgraph::dot::{Config, Dot};
 use petgraph::graph::{NodeIndex, UnGraph};
 use petgraph::prelude::*;
-// use petgraph::visit::{Control, DfsEvent};
 use std::collections::HashMap;
-use std::collections::HashSet;
 use std::{collections::BTreeMap, fs};
 
 fn main() {
     let input = fs::read_to_string("./inputs/day_16_input.txt").unwrap();
 
     println!("{}", part_1(&input)); // 1820
+    println!("{}", part_2(&input)); // 1820
 }
 
 fn part_1(input: &str) -> u32 {
@@ -30,28 +28,10 @@ fn part_1(input: &str) -> u32 {
     // II has AA, JJ
     // BB has CC, AA
 
-    // I want to maximize getting to big valves quickly
-    // A* to each valve from the start?
-    // pick the one that has the biggest rate * time_left?
-    // but maybe it's worth turning a valve on on the way?
-
     // I want to find a path between all the non zero rates
     // what order is best?
 
     // depth first search with a cap of 30
-
-    // version 2
-    // I only have 30 min
-    // what is the best case?
-    // highest rate at time = 2
-    // 28 min * highest_rate
-    // 26 * 2nd rate
-    // etc.
-    // then test if that is possible given the graph
-    // if it is, that's the answer
-    // if it isn't try the next best solution
-
-    // I might not open anything at t=2
 
     // test solution
     // t=2: open 20
@@ -62,18 +42,10 @@ fn part_1(input: &str) -> u32 {
     // t=24: open 2 = 81
 
     // 20 * 28 = 560
-    //
-
-    // let valve = Valve {
-    //     rate: 0,
-    //     neighbours: vec!["DD".to_string(), "II".to_string(), "BB".to_string()],
-    // };
-    // valves.insert("AA".to_string(), valve);
 
     let valves = parse_into_b_tree_map(&input);
     // this is sorted by the name
     // AA, then BB, then CC, etc.
-    // println!("valves: {:?}", valves);
 
     let mut rates = Vec::new();
     let mut non_zero_rates = Vec::new();
@@ -98,18 +70,13 @@ fn part_1(input: &str) -> u32 {
 
     // depth first
     // can't open the same valve twice
-    let mut opened: HashSet<String> = HashSet::new();
-    let path: Vec<Cave> = Vec::new();
     let mut best = 0;
     // depth 24 or 25 should be all I need to get the right value
     // recursion(&valves, opened, "AA".to_string(), 30, &mut best, 0);
     let mut run_count = 0;
 
     let dist_lookup = create_dist_lookup(&valves);
-    // at 27, it runs 133 times. 1718
-    // at 28, it runs 49 times and gets too high
-    // at 29, it runs 14 times
-    // at 30, it runs 0 times
+
     let time = 30;
     recursion_with_dist_lookup(
         &valves,
@@ -127,92 +94,8 @@ fn part_1(input: &str) -> u32 {
     best
 }
 
-fn recursion(
-    tree: &BTreeMap<String, Valve>,
-    opened: HashSet<String>,
-    start: String,
-    depth: i32,
-    best: &mut u32,
-    current_sum: u32,
-) {
-    // let mut path = path.clone();
-    // path.push(Cave::Move(start.clone()));
-    if depth == 24 && current_sum == 0 {
-        // println!("Quit early if not opening anything");
-        return;
-    } else if depth == 16 && current_sum < 500 {
-        return;
-    }
-
-    if depth <= 5 {
-        // println!("Depth Reached");
-
-        if current_sum > *best {
-            println!("Changed best: {} -> {}", best, current_sum);
-            *best = current_sum;
-        }
-        return;
-
-        // let mut sum = 0;
-        // for item in &path {
-        //     if let Cave::Open(v) = item {
-        //         sum += v;
-        //     }
-        // }
-        // // if sum > 0 {
-        // //     println!("Depth reached. Path: {:?} Sum: {:?}", &path, sum);
-        // // }
-        // if sum > *best {
-        //     println!("Depth reached. Path: {:?} Sum: {:?}", &path, sum);
-        //     println!("Changed best: {} -> {}", best, sum);
-        //     *best = sum;
-        // }
-        // return;
-    }
-    // if !evaluated.insert(start.clone()) {
-    //     // println!("Already Checked");
-    //     // return;
-    // }
-
-    // println!("Start: {:?}, depth: {}", &start, depth);
-
-    let valve = tree.get(&start).unwrap();
-
-    for name in &valve.neighbours {
-        for i in 0..2 {
-            if i == 0 {
-                if valve.rate > 0 {
-                    let mut new_open = opened.clone();
-                    let depth = depth - 1;
-                    if !new_open.insert(start.clone()) {
-                        // if you try to open the same valve twice
-                        return;
-                    }
-                    // don't open the same valve twice somehow
-                    // let mut open_path = path.clone();
-                    let value = depth as u32 * valve.rate;
-                    // open_path.push(Cave::Open(depth as u32 * valve.rate));
-                    let new_sum = current_sum + value;
-                    recursion(&tree, new_open, name.clone(), depth - 1, best, new_sum);
-                }
-            } else {
-                recursion(
-                    &tree,
-                    opened.clone(),
-                    name.clone(),
-                    depth - 1,
-                    best,
-                    current_sum,
-                );
-            }
-        }
-        // println!("Name: {:?}", &name);
-        // if valve.rate > 0 {
-        //     // open the valve
-        //     path.push(format!("Opened {:?}", start.clone()));
-        //     recursion(&tree, evaluated, name.clone(), depth - 1, path.clone());
-        // }
-    }
+fn part_2(input: &str) -> u32 {
+    99
 }
 
 fn recursion_with_dist_lookup(
@@ -248,7 +131,6 @@ fn recursion_with_dist_lookup(
             // is the valve too far away to get to?
             if new_time < 0 {
                 // can't reach this valve
-                // println!("Can't reach this valve. time: {} new_time:  {}", time, new_time);
                 if current > *best {
                     println!("Changed best interior: {} -> {}", best, current);
                     *best = current;
@@ -259,7 +141,6 @@ fn recursion_with_dist_lookup(
 
             let flow = tree.get(item).unwrap().rate;
             let new_total = current + (new_time as u32) * flow;
-            // println!("pair: {:?} new_total: {}", &pair, new_total);
 
             let mut to_visit = non_zero_rates.clone();
             to_visit.remove(i);
@@ -317,16 +198,6 @@ fn parse_into_b_tree_map(input: &str) -> BTreeMap<String, Valve> {
     valves
 }
 
-fn calculate_total_flow(path: Vec<Cave>) -> u32 {
-    let mut sum = 0;
-    for item in &path {
-        if let Cave::Open(v) = item {
-            sum += v;
-        }
-    }
-    sum
-}
-
 fn create_dist_lookup(tree: &BTreeMap<String, Valve>) -> HashMap<StringPair, u32> {
     let mut names = Vec::new();
 
@@ -377,12 +248,6 @@ fn create_dist_lookup(tree: &BTreeMap<String, Valve>) -> HashMap<StringPair, u32
     dist_lookup
 }
 
-#[derive(Clone, Debug)]
-enum Cave {
-    Move(String),
-    Open(u32),
-}
-
 #[derive(Debug)]
 struct Valve {
     rate: u32,
@@ -424,81 +289,16 @@ Valve II has flow rate=0; tunnels lead to valves AA, JJ
 Valve JJ has flow rate=21; tunnel leads to valve II";
 
     #[test]
-    // #[ignore = "too long"]
+    #[ignore = "long"]
     fn part_1_works() {
-        // finished in 754.99s
-        // got 1710 (wrong)
-        // off by 1 is 1732
         assert_eq!(1651, part_1(&BASIC_INPUT_DAY_16));
     }
 
     #[test]
-    #[ignore = "not using this anymore"]
-    fn test_total_flow() {
-        let path = vec![
-            Cave::Move("DD".to_string()),
-            Cave::Open(20 * 28),
-            Cave::Open(13 * 25),
-            Cave::Open(21 * 21),
-            Cave::Open(22 * 13),
-            Cave::Open(3 * 9),
-            Cave::Open(2 * 6),
-        ];
-
-        assert_eq!(1651, calculate_total_flow(path));
-
-        let path = vec![
-            Cave::Move("DD".to_string()),
-            Cave::Open(20 * 29), // 812
-            Cave::Open(13 * 26), // 338
-            Cave::Open(21 * 22), // 462
-            Cave::Open(22 * 14), // 308
-            Cave::Open(3 * 10),  // 30
-            Cave::Open(2 * 7),   // 14
-        ];
-        // 1732
-        println!("Off by 1 {:?}", calculate_total_flow(path));
+    // #[ignore = "too long"]
+    fn part_2_works() {
+        assert_eq!(1707, part_2(&BASIC_INPUT_DAY_16));
     }
-
-    // #[test]
-    // #[ignore = "petgraph"]
-    // fn test_petgraph() {
-    //     let gr: Graph<(), ()> = Graph::from_edges(&[
-    //         (0, 1),
-    //         (0, 2),
-    //         (0, 3),
-    //         (1, 3),
-    //         (2, 3),
-    //         (2, 4),
-    //         (4, 0),
-    //         (4, 5),
-    //     ]);
-
-    //     // record each predecessor, mapping node → node
-    //     let mut predecessor = vec![NodeIndex::end(); gr.node_count()];
-    //     let start = n(0);
-    //     let goal = n(5);
-    //     depth_first_search(&gr, Some(start), |event| {
-    //         if let DfsEvent::TreeEdge(u, v) = event {
-    //             predecessor[v.index()] = u;
-    //             if v == goal {
-    //                 return Control::Break(v);
-    //             }
-    //         }
-    //         Control::Continue
-    //     });
-
-    //     let mut next = goal;
-    //     let mut path = vec![next];
-    //     while next != start {
-    //         let pred = predecessor[next.index()];
-    //         path.push(pred);
-    //         next = pred;
-    //     }
-    //     path.reverse();
-    //     println!("path: {:?}", path);
-    //     assert_eq!(&path, &[n(0), n(2), n(4), n(5)]);
-    // }
 
     #[test]
     #[ignore = "visual"]
@@ -625,14 +425,6 @@ Valve JJ has flow rate=21; tunnel leads to valve II";
                 item
             );
         }
-    }
-
-    #[test]
-    fn petgraph_edges_as_strings() {
-        // maybe it doesn't work with strings?
-        // let g = UnGraph::<&str, ()>::from_edges(
-        //     &[("AA", "BB"), ("AA", "CC"), ("CC", "DD")]
-        // );
     }
 
     #[test]
