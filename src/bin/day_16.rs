@@ -10,20 +10,7 @@ use std::{collections::BTreeMap, fs};
 fn main() {
     let input = fs::read_to_string("./inputs/day_16_input.txt").unwrap();
 
-//     let test = "Valve AA has flow rate=0; tunnels lead to valves DD, II, BB
-// Valve BB has flow rate=13; tunnels lead to valves CC, AA
-// Valve CC has flow rate=2; tunnels lead to valves DD, BB
-// Valve DD has flow rate=20; tunnels lead to valves CC, AA, EE
-// Valve EE has flow rate=3; tunnels lead to valves FF, DD
-// Valve FF has flow rate=0; tunnels lead to valves EE, GG
-// Valve GG has flow rate=0; tunnels lead to valves FF, HH
-// Valve HH has flow rate=22; tunnel leads to valve GG
-// Valve II has flow rate=0; tunnels lead to valves AA, JJ
-// Valve JJ has flow rate=21; tunnel leads to valve II";
-
-//     println!("{}", part_1(&test));
-
-    println!("{}", part_1(&input));
+    println!("{}", part_1(&input)); // 1820
 }
 
 fn part_1(input: &str) -> u32 {
@@ -123,7 +110,7 @@ fn part_1(input: &str) -> u32 {
     // at 28, it runs 49 times and gets too high
     // at 29, it runs 14 times
     // at 30, it runs 0 times
-    let time = 26;
+    let time = 30;
     recursion_with_dist_lookup(
         &valves,
         &dist_lookup,
@@ -238,15 +225,17 @@ fn recursion_with_dist_lookup(
     best: &mut u32,
     run_count: &mut u32,
 ) {
-    // is it running out of thing to visit?
+    // bug was here
+    // used to be if time < 0
+    // then update best
+    // if I update every time, it works
 
+    if current > *best {
+        println!("Changed best: {} -> {}", best, current);
+        *best = current;
+    }
+    *run_count += 1;
     if time <= 0 {
-        // println!("End at time: {}", time);
-        if current > *best {
-            println!("Changed best: {} -> {}", best, current);
-            *best = current;
-        }
-        *run_count += 1;
         return;
     }
 
@@ -254,10 +243,23 @@ fn recursion_with_dist_lookup(
         if item != &start {
             let pair = StringPair::new(start.clone(), item.clone());
             let dist = dist_lookup.get(&pair).unwrap();
-            let flow = tree.get(item).unwrap().rate;
-            
-            let new_total = current + ((time as u32)+2) * flow;
+
             let new_time = time - 1 - *dist as i32;
+            // is the valve too far away to get to?
+            if new_time < 0 {
+                // can't reach this valve
+                // println!("Can't reach this valve. time: {} new_time:  {}", time, new_time);
+                if current > *best {
+                    println!("Changed best interior: {} -> {}", best, current);
+                    *best = current;
+                }
+                *run_count += 1;
+                continue;
+            }
+
+            let flow = tree.get(item).unwrap().rate;
+            let new_total = current + (new_time as u32) * flow;
+            // println!("pair: {:?} new_total: {}", &pair, new_total);
 
             let mut to_visit = non_zero_rates.clone();
             to_visit.remove(i);
