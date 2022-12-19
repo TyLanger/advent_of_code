@@ -3,7 +3,8 @@ use std::{collections::VecDeque, fs};
 fn main() {
     let input = fs::read_to_string("./inputs/day_19_input.txt").unwrap();
 
-    println!("{}", part_1(&input));
+    // println!("{}", part_1(&input)); // 1599
+    println!("{}", part_2(&input)); // 14112
 }
 
 fn part_1(input: &str) -> u32 {
@@ -132,6 +133,25 @@ fn part_2(input: &str) -> u32 {
 
     let mut product = 1;
     for b in blueprints.iter().take(3) {
+        // 3s
+        // 26: 8s
+        // 28: 16s
+        // 30: 30s
+        // 32: 60s
+        // want: 56 && 62
+        // got: 54 && 62
+        // without the assumption we want to make an obs bot
+        // if we have 0 and can
+        // 32: 268s
+        // 32 min
+
+        // Real
+        // for blue: 1, cracked: 49
+        // for blue: 2, cracked: 18
+        // for blue: 3, cracked: 16
+        // 14112
+
+
         let most_cracked = loop_bots_most_geodes(&b, 32);
         println!("for blue: {:?}, cracked: {:?}", b.id, &most_cracked);
 
@@ -230,68 +250,9 @@ fn loop_bots_most_geodes(b: &Blueprint, depth: u32) -> u32 {
     most_cracked
 }
 
-fn recursive_bots(
-    blue: &Blueprint,
-    bots: Bots,
-    res: Resources,
-    depth: u32,
-    geodes_cracked: u32,
-    most_cracked: &mut u32,
-) {
-    let mut geodes_cracked = geodes_cracked;
-
-    if geodes_cracked > *most_cracked {
-        println!(
-            "Better: {:?} -> {:?} at depth: {:?}",
-            most_cracked, geodes_cracked, depth
-        );
-        println!("  With bots: {:?}", bots);
-        *most_cracked = geodes_cracked;
-    }
-
-    if depth == 0 {
-        return;
-    }
-
-    for o in blue.get_options(&res, &bots) {
-        let mut res = res;
-        let mut bots = bots;
-        res.add(bots.ore, bots.clay, bots.obs);
-        geodes_cracked += bots.geode;
-        match o {
-            None => {
-                recursive_bots(blue, bots, res, depth - 1, geodes_cracked, most_cracked);
-            }
-            Some(bot) => match bot {
-                Bot::Ore => {
-                    res.ore -= blue.ore_cost;
-                    bots.ore += 1;
-                    recursive_bots(blue, bots, res, depth - 1, geodes_cracked, most_cracked);
-                }
-                Bot::Clay => {
-                    res.ore -= blue.clay_cost;
-                    bots.clay += 1;
-                    recursive_bots(blue, bots, res, depth - 1, geodes_cracked, most_cracked);
-                }
-                Bot::Obs => {
-                    res.ore -= blue.obs_cost;
-                    res.clay -= blue.obs_clay_cost;
-                    bots.obs += 1;
-                    recursive_bots(blue, bots, res, depth - 1, geodes_cracked, most_cracked);
-                }
-                Bot::Geode => {
-                    res.ore -= blue.geode_cost;
-                    res.obs -= blue.geode_obs_cost;
-                    bots.geode += 1;
-                    recursive_bots(blue, bots, res, depth - 1, geodes_cracked, most_cracked);
-                }
-            },
-        }
-    }
-}
-
 fn get_naive_geodes_cracked(blue: &Blueprint, depth: u32) -> Vec<u32> {
     // assume 1 of each
+    // probably too naive to be useful
     let mut v = Vec::new();
 
     let mut bots = Bots {
@@ -338,6 +299,43 @@ fn get_naive_geodes_cracked(blue: &Blueprint, depth: u32) -> Vec<u32> {
             None => {}
         }
     }
+    v
+}
+
+fn guess(blue: &Blueprint, depth: u32) -> Vec<u32> {
+    let mut v = Vec::new();
+
+    // use ratios like factorio?
+    // does that only work for parrallel stuff?
+
+    let mut bots = Bots {
+        ore: 1,
+        clay: 0,
+        obs: 0,
+        geode: 0,
+    };
+    let mut res = Resources {
+        ore: 0,
+        clay: 0,
+        obs: 0,
+    };
+
+    let max_ore_cost = blue
+        .ore_cost
+        .max(blue.clay_cost)
+        .max(blue.obs_cost)
+        .max(blue.geode_cost);
+
+    for i in 0..depth {
+        let mut to_build = None;
+
+        if blue.can_build(Bot::Clay, &res) && bots.ore < max_ore_cost {
+            to_build = Some(Bot::Ore);
+        }
+
+        // todo
+    }
+
     v
 }
 
@@ -444,10 +442,10 @@ impl Blueprint {
 
         // if have 0 obs, build 1
         // probaby true
-        if bots.obs == 0 && self.can_build(Bot::Obs, res) {
-            v.push(Some(Bot::Obs));
-            return v;
-        }
+        // if bots.obs == 0 && self.can_build(Bot::Obs, res) {
+        //     v.push(Some(Bot::Obs));
+        //     return v;
+        // }
 
         // might not be true here
         // if stuff only needs 5 clay, might be better to build a second ore bot
@@ -455,13 +453,22 @@ impl Blueprint {
         //     v.push(Some(Bot::Clay));
         //     return v;
         // }
+        let max_ore_cost = self
+            .ore_cost
+            .max(self.clay_cost)
+            .max(self.obs_cost)
+            .max(self.geode_cost);
 
         // don't build ore if the ore_bots you have already
         // can build anything in 1 turn
-        if self.can_build(Bot::Ore, res) && res.ore < 10 {
+        if self.can_build(Bot::Ore, res) && res.ore < 10 && bots.ore < max_ore_cost {
             v.push(Some(Bot::Ore));
         }
-        if self.can_build(Bot::Clay, res) && res.clay < self.obs_clay_cost * 2 {
+        // don't build if already have enough clay bots to build a obs bot every turn
+        if self.can_build(Bot::Clay, res)
+            && res.clay < self.obs_clay_cost * 2
+            && bots.clay < self.obs_clay_cost
+        {
             v.push(Some(Bot::Clay));
         }
         if self.can_build(Bot::Obs, res) && res.obs < self.geode_obs_cost * 2 {
