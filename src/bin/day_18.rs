@@ -21,11 +21,9 @@ fn part_1(input: &str) -> u32 {
     for c in &cubes {
         let mut hit_count = 0;
 
-        for n in c.get_neighbours(22, 22, 22) {
-            if let Some(n) = n {
-                if cube_map.contains(&n) {
-                    hit_count += 1;
-                }
+        for n in c.get_neighbours(22, 22, 22).into_iter().flatten() {
+            if cube_map.contains(&n) {
+                hit_count += 1;
             }
         }
         open_faces += 6 - hit_count;
@@ -117,23 +115,26 @@ fn part_2(input: &str) -> u32 {
         // hack
         // The blocks probably cut you off if you flood fill from 0,0,0
         // so go out of bounds a bit to get around this block
-        for n in current.get_neighbours(max_x + 1, max_y + 1, max_z + 1) {
+        for n in current
+            .get_neighbours(max_x + 1, max_y + 1, max_z + 1)
+            .into_iter()
+            .flatten()
+        {
             // is a neighbour in air?
             // is it a block?
-            if let Some(n) = n {
-                if !within_bounds(&n, max_x + 2, max_y + 2, max_z + 2) {
-                    continue;
-                }
 
-                if cube_set.contains(&n) {
-                    // it's a block
-                    continue;
-                }
+            if !within_bounds(&n, max_x + 2, max_y + 2, max_z + 2) {
+                continue;
+            }
 
-                if air.insert(n) {
-                    // was new
-                    queue.push(n);
-                }
+            if cube_set.contains(&n) {
+                // it's a block
+                continue;
+            }
+
+            if air.insert(n) {
+                // was new
+                queue.push(n);
             }
         }
     }

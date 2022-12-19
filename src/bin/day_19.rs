@@ -3,7 +3,7 @@ use std::{collections::VecDeque, fs};
 fn main() {
     let input = fs::read_to_string("./inputs/day_19_input.txt").unwrap();
 
-    // println!("{}", part_1(&input)); // 1599
+    println!("{}", part_1(&input)); // 1599
     println!("{}", part_2(&input)); // 14112
 }
 
@@ -15,8 +15,6 @@ fn part_1(input: &str) -> u32 {
 
         blueprints.push(b);
     }
-
-    // println!("Blueprints: {:?}", blueprints);
 
     // what do I need to do?
     // figure out how many geodes I can crack
@@ -40,50 +38,15 @@ fn part_1(input: &str) -> u32 {
     // is this just the same as the caves and valves?
 
     // simulate
-    // let mut ore_bots = 1;
-    // let mut clay_bots = 0;
-    // let mut obs_bots = 0;
-    // let mut geode_bots = 0;
-
-    let bots = Bots {
-        ore: 1,
-        clay: 0,
-        obs: 0,
-        geode: 0,
-    };
-
-    let res = Resources {
-        ore: 0,
-        clay: 0,
-        obs: 0,
-    };
-    let geodes_cracked: u32 = 0;
     let mut quality = 0;
 
     for b in blueprints {
-        // recursive_bots(&b, bots, res, depth, geodes_cracked, &mut most_cracked);
         let most_cracked = loop_bots_most_geodes(&b, 24);
 
         println!("for blue: {:?}, cracked: {:?}", b.id, &most_cracked);
 
         let q = b.id * most_cracked;
         quality += q;
-
-        // for _ in 0..24 {
-        //     // build something
-        //     // -= resources
-        //     let options = b.get_options(&res);
-        //     for o in options {
-        //         // recursive(o)
-        //     }
-
-        //     // gather
-        //     res.add(ore_bots, clay_bots, obs_bots);
-        //     geodes_cracked += bots.geode;
-
-        //     // finish building
-        //     // += bots
-        // }
 
         // for blue: 1, cracked: 6
         // for blue: 2, cracked: 0
@@ -151,8 +114,7 @@ fn part_2(input: &str) -> u32 {
         // for blue: 3, cracked: 16
         // 14112
 
-
-        let most_cracked = loop_bots_most_geodes(&b, 32);
+        let most_cracked = loop_bots_most_geodes(b, 32);
         println!("for blue: {:?}, cracked: {:?}", b.id, &most_cracked);
 
         product *= most_cracked;
@@ -161,7 +123,6 @@ fn part_2(input: &str) -> u32 {
     product
 }
 
-// uses too much memory and crashes
 fn loop_bots_most_geodes(b: &Blueprint, depth: u32) -> u32 {
     let mut queue: VecDeque<ProblemState> = VecDeque::new();
     let mut most_cracked = 0;
@@ -183,14 +144,7 @@ fn loop_bots_most_geodes(b: &Blueprint, depth: u32) -> u32 {
     };
     queue.push_back(problem);
 
-    // let mut count = 0;
     while !queue.is_empty() {
-        // count += 1;
-        // if count % 1_000_000 == 0 {
-        //     println!("Count: {} queue_len: {:?}", count, &queue.len());
-        //     println!("Top queue: {:?}", queue.front());
-        //     println!();
-        // }
         // Count: 79600000 queue_len: 133740958
         // Top queue: Some(ProblemState { res: Resources { ore: 23, clay: 14, obs: 11 }, geodes_cracked: 0, bots: Bots
         // { ore: 6, clay: 5, obs: 3, geode: 0 }, depth: 2 })
@@ -204,7 +158,6 @@ fn loop_bots_most_geodes(b: &Blueprint, depth: u32) -> u32 {
         // { ore: 4, clay: 6, obs: 2, geode: 0 }, depth: 2 })
         let current = queue.pop_front().unwrap();
         if current.is_ended() {
-            // println!("Ended");
             if current.geodes_cracked > most_cracked {
                 most_cracked = current.geodes_cracked;
             }
@@ -218,8 +171,8 @@ fn loop_bots_most_geodes(b: &Blueprint, depth: u32) -> u32 {
                 current.geodes_cracked += current.bots.geode;
                 current.depth -= 1;
 
-                match o {
-                    Some(bot) => match bot {
+                if let Some(bot) = o {
+                    match bot {
                         Bot::Ore => {
                             current.res.ore -= b.ore_cost;
                             current.bots.ore += 1;
@@ -238,8 +191,7 @@ fn loop_bots_most_geodes(b: &Blueprint, depth: u32) -> u32 {
                             current.res.obs -= b.geode_obs_cost;
                             current.bots.geode += 1;
                         }
-                    },
-                    _ => {}
+                    }
                 }
 
                 queue.push_back(current);
@@ -250,6 +202,7 @@ fn loop_bots_most_geodes(b: &Blueprint, depth: u32) -> u32 {
     most_cracked
 }
 
+#[allow(unused)]
 fn get_naive_geodes_cracked(blue: &Blueprint, depth: u32) -> Vec<u32> {
     // assume 1 of each
     // probably too naive to be useful
@@ -269,7 +222,7 @@ fn get_naive_geodes_cracked(blue: &Blueprint, depth: u32) -> Vec<u32> {
 
     let mut geodes_cracked = 0;
 
-    for i in 0..depth {
+    for _i in 0..depth {
         let mut to_build = None;
         // choose
         // -= res
@@ -289,24 +242,21 @@ fn get_naive_geodes_cracked(blue: &Blueprint, depth: u32) -> Vec<u32> {
 
         // build
         // += bots
-        match to_build {
-            Some(bot) => match bot {
+        if let Some(bot) = to_build {
+            match bot {
                 Bot::Ore => bots.ore += 1,
                 Bot::Clay => bots.clay += 1,
                 Bot::Obs => bots.obs += 1,
                 Bot::Geode => bots.geode += 1,
-            },
-            None => {}
+            }
         }
     }
     v
 }
 
+#[allow(unused)]
 fn guess(blue: &Blueprint, depth: u32) -> Vec<u32> {
     let mut v = Vec::new();
-
-    // use ratios like factorio?
-    // does that only work for parrallel stuff?
 
     let mut bots = Bots {
         ore: 1,
@@ -320,21 +270,52 @@ fn guess(blue: &Blueprint, depth: u32) -> Vec<u32> {
         obs: 0,
     };
 
+    let mut geodes_cracked = 0;
+
     let max_ore_cost = blue
         .ore_cost
         .max(blue.clay_cost)
         .max(blue.obs_cost)
         .max(blue.geode_cost);
 
-    for i in 0..depth {
+    for _i in 0..depth {
         let mut to_build = None;
 
-        if blue.can_build(Bot::Clay, &res) && bots.ore < max_ore_cost {
+        // choose
+        // -= res
+        // make ore bots up to a cap
+        // same for clay and obs
+        // then the rest geodes
+        if blue.can_build(Bot::Ore, &res) && bots.ore < max_ore_cost {
             to_build = Some(Bot::Ore);
+        } else if blue.can_build(Bot::Clay, &res) && bots.clay < blue.obs_clay_cost {
+            to_build = Some(Bot::Clay);
+        } else if blue.can_build(Bot::Obs, &res) && bots.obs < blue.geode_obs_cost {
+            to_build = Some(Bot::Obs);
+        } else if blue.can_build(Bot::Geode, &res) {
+            to_build = Some(Bot::Geode);
         }
 
-        // todo
+        // gather
+        // += res
+        res.add(bots.ore, bots.clay, bots.obs);
+        geodes_cracked += bots.geode;
+        v.push(geodes_cracked);
+
+        // build
+        // += bots
+        if let Some(bot) = to_build {
+            match bot {
+                Bot::Ore => bots.ore += 1,
+                Bot::Clay => bots.clay += 1,
+                Bot::Obs => bots.obs += 1,
+                Bot::Geode => bots.geode += 1,
+            }
+        }
     }
+
+    println!("bots: {:?}", bots);
+    println!("resources: {:?}", res);
 
     v
 }
@@ -348,10 +329,6 @@ struct ProblemState {
 }
 
 impl ProblemState {
-    fn get_depth(&self) -> u32 {
-        self.depth
-    }
-
     fn is_ended(&self) -> bool {
         self.depth == 0
     }
@@ -613,6 +590,7 @@ Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsid
     }
 
     #[test]
+    #[ignore = "visual println"]
     fn test_naive_geodes() {
         let blue = Blueprint {
             id: 0,
@@ -628,5 +606,32 @@ Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsid
         println!("naive: {:?}", naive);
         let naive = get_naive_geodes_cracked(&blue, 32);
         println!("naive: {:?}", naive);
+    }
+
+    #[test]
+    #[ignore = "visual println"]
+    fn test_guess() {
+        let blue = Blueprint {
+            id: 0,
+            ore_cost: 4,
+            clay_cost: 2,
+            obs_cost: 3,
+            obs_clay_cost: 14,
+            geode_cost: 2,
+            geode_obs_cost: 7,
+        };
+
+        let naive = guess(&blue, 24);
+        println!("guess 24: {:?}", naive);
+        // build the max num of ore, then clay, then obs, then only geodes
+        // bots: Bots { ore: 4, clay: 14, obs: 7, geode: 6 }
+        // resources: Resources { ore: 110, clay: 279, obs: 63 }
+        // naive: [0, 0, 0, ..., 0, 0, 0, 0, 1, 3, 6, 10, 15]   =   35
+        // optimal is 56
+        // 2 ore, 7 clay, 5 obsidian, 9 geode
+        // order is all ore, all clay, 4 obs, 1 geode, 1 obs, all geode
+        // weird. at the 1 obs, you could've made a geode
+        let naive = guess(&blue, 32);
+        println!("guess 32: {:?}", naive);
     }
 }
