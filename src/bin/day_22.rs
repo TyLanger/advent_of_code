@@ -1,4 +1,4 @@
-use std::fs;
+use std::{collections::HashMap, fs};
 
 fn main() {
     let input = fs::read_to_string("./inputs/day_22_input.txt").unwrap();
@@ -99,6 +99,7 @@ fn part_1(input: &str) -> usize {
     // 0 is right, 1 is down, 2 is left, 3 is up
 
     println!("Start: ({}, {})", x, y);
+    let mut visited = HashMap::new();
 
     for c in commands {
         // println!("Facing: {}", facing);
@@ -106,6 +107,8 @@ fn part_1(input: &str) -> usize {
         match c {
             Command::Move(val) => {
                 for _i in 0..val {
+                    visited.insert((x, y), facing);
+
                     (x, y) = get_new_pos(x, y, width, height, facing, &rows);
                     // println!("({}, {})", x, y);
                 }
@@ -115,6 +118,34 @@ fn part_1(input: &str) -> usize {
                 Turn::Right => facing = (facing + 1) % 4,
             },
         }
+    }
+    // last one
+    visited.insert((x, y), 10);
+
+    println!("Visual");
+    // visual
+    for (r, row) in rows.iter().enumerate() {
+        for (c, item) in row.iter().enumerate() {
+            match item {
+                Tile::Floor => {
+                    if let Some(fac) = visited.get(&(c, r)) {
+                        match fac {
+                            0 => print!(">"),
+                            1 => print!("v"),
+                            2 => print!("<"),
+                            3 => print!("^"),
+                            10 => print!("@"),
+                            _ => print!("!"),
+                        }
+                    } else {
+                        print!(".");
+                    }
+                }
+                Tile::Wall => print!("#"),
+                Tile::Blank => print!(" "),
+            }
+        }
+        println!();
     }
 
     let row = y + 1;
@@ -163,7 +194,6 @@ fn get_new_pos(
                     }
                 }
                 Tile::Floor => {
-
                     return (new_x, new_y);
                 }
                 Tile::Wall => {
@@ -240,10 +270,10 @@ fn get_new_pos(
                 Tile::Blank => {
                     // wrap around
                     for i in 0..height {
-                        if Tile::Blank != rows[height - 1 - i][x] {
-                            match rows[height - 1 -i][x] {
+                        if Tile::Blank != rows[(height - i) - 1][x] {
+                            match rows[(height - i) - 1][x] {
                                 Tile::Floor => {
-                                    return (x, height - 1 - i);
+                                    return (x, (height - i) - 1);
                                 }
                                 Tile::Wall => {
                                     return (x, y);
@@ -400,7 +430,7 @@ mod tests {
 
     #[test]
     fn test_rev() {
-        let v = vec![5,6,7,8];
+        let v = vec![5, 6, 7, 8];
         for (i, a) in v.iter().rev().enumerate() {
             println!("i: {}, a: {}", i, a);
         }
