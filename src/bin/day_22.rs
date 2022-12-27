@@ -107,7 +107,13 @@ fn part_1(input: &str) -> usize {
         match c {
             Command::Move(val) => {
                 for _i in 0..val {
-                    visited.insert((x, y), facing);
+                    if !visited.contains_key(&(x, y)) {
+                        // if !exist
+                        // only track the first direction
+                        // still can't follow the path when it goes from the top to bottom
+                        // it's too big
+                        visited.insert((x, y), facing);
+                    }
 
                     (x, y) = get_new_pos(x, y, width, height, facing, &rows);
                     // println!("({}, {})", x, y);
@@ -119,7 +125,7 @@ fn part_1(input: &str) -> usize {
             },
         }
     }
-    // last one
+    // last one 10 maps to @ for the end
     visited.insert((x, y), 10);
 
     println!("Visual");
@@ -426,6 +432,25 @@ mod tests {
         assert_eq!(4050, part_1(&BASIC_INPUT_DAY_22_D));
         // go off edge right and hit a wall
         assert_eq!(3048, part_1(&BASIC_INPUT_DAY_22_E));
+    }
+
+    #[test]
+    fn test_simple_cases() {
+        let input = "...
+...
+...
+
+1";
+        part_1(input);
+        // what cases do I need?
+        // walk right into blank
+        // walk right into wall
+        // is the problem it's not counting correctly when it wraps?
+        // and it's just hard to tell bc it usually hits a wall?
+        // maybe double wrapping is an issue?
+        // maybe there's a 0 or 1 move that's broken
+
+        // I should extract some functions to make it easier to test
     }
 
     #[test]
