@@ -70,7 +70,6 @@ fn part_1(input: &str) -> u32 {
     println!("Start");
     display_elves(&elves);
 
-
     for i in 0..10 {
         let set = calc_elf_positions(&elves);
         let mut propose_move: HashMap<Position, u32> = HashMap::new();
@@ -81,7 +80,7 @@ fn part_1(input: &str) -> u32 {
             if any_nearby_elves(e.pos, &set) {
                 // check above
                 // then below, etc
-                let open_dir = empty_direction(e.pos, &set);
+                let open_dir = empty_direction(e.pos, &set, i);
                 match open_dir {
                     Some(Direction::Up) => {
                         let up = Position {
@@ -154,8 +153,8 @@ fn part_1(input: &str) -> u32 {
                 }
             }
         }
-        println!("After round: {}", i);
-        display_elves(&elves);
+        // println!("After round: {}", i);
+        // display_elves(&elves);
 
         // println!("Moved elves");
         // println!("Elves: {:#?}", &elves[1]);
@@ -169,15 +168,12 @@ fn part_1(input: &str) -> u32 {
     // println!("Bounds: top: {}, bot: {}, left: {}, right: {}", top, bot, left, right);
     // height: 11
     // width: 12
-    let height = bounds.bot - bounds.top;
-    let width = bounds.right - bounds.left;
+    let height = (bounds.bot - bounds.top) + 1;
+    let width = (bounds.right - bounds.left) + 1;
     println!("Height: {}, width: {}", height, width);
-
 
     println!("num elves: {:?}", &elves.len());
     display_elves(&elves);
-
-    
 
     height as u32 * width as u32 - (elves.len() as u32)
 }
@@ -199,7 +195,7 @@ fn display_elves(elves: &Vec<Elf>) {
 
             if positions.contains(&pos) {
                 print!("#");
-            } else  {
+            } else {
                 print!(".");
             }
         }
@@ -290,55 +286,69 @@ fn any_nearby_elves(pos: Position, set: &HashSet<Position>) -> bool {
         || set.contains(&right)
 }
 
-fn empty_direction(pos: Position, set: &HashSet<Position>) -> Option<Direction> {
-    let up_left = Position {
-        x: pos.x - 1,
-        y: pos.y - 1,
-    };
-    let up = Position {
-        x: pos.x,
-        y: pos.y - 1,
-    };
-    let up_right = Position {
-        x: pos.x + 1,
-        y: pos.y - 1,
-    };
-    if !(set.contains(&up_left) || set.contains(&up) || set.contains(&up_right)) {
-        return Some(Direction::Up);
-    }
+fn empty_direction(pos: Position, set: &HashSet<Position>, round: u32) -> Option<Direction> {
+    // loop the 4 diff orders
+    // up, down, left, right
+    // down, left, right, up
+    // left, right, up, down
+    // right, up, down, left
+    for i in 0..4 {
+        let up_left = Position {
+            x: pos.x - 1,
+            y: pos.y - 1,
+        };
+        let up = Position {
+            x: pos.x,
+            y: pos.y - 1,
+        };
+        let up_right = Position {
+            x: pos.x + 1,
+            y: pos.y - 1,
+        };
+        if (i + round) % 4 == 0 {
+            if !(set.contains(&up_left) || set.contains(&up) || set.contains(&up_right)) {
+                return Some(Direction::Up);
+            }
+        }
 
-    let down = Position {
-        x: pos.x,
-        y: pos.y + 1,
-    };
-    let down_left = Position {
-        x: pos.x - 1,
-        y: pos.y + 1,
-    };
-    let down_right = Position {
-        x: pos.x + 1,
-        y: pos.y + 1,
-    };
-    if !(set.contains(&down_left) || set.contains(&down) || set.contains(&down_right)) {
-        return Some(Direction::Down);
-    }
+        let down = Position {
+            x: pos.x,
+            y: pos.y + 1,
+        };
+        let down_left = Position {
+            x: pos.x - 1,
+            y: pos.y + 1,
+        };
+        let down_right = Position {
+            x: pos.x + 1,
+            y: pos.y + 1,
+        };
+        if (i + round) % 4 == 1 {
+            if !(set.contains(&down_left) || set.contains(&down) || set.contains(&down_right)) {
+                return Some(Direction::Down);
+            }
+        }
 
-    let left = Position {
-        x: pos.x - 1,
-        y: pos.y,
-    };
-    if !(set.contains(&down_left) || set.contains(&left) || set.contains(&up_left)) {
-        return Some(Direction::Left);
-    }
+        let left = Position {
+            x: pos.x - 1,
+            y: pos.y,
+        };
+        if (i + round) % 4 == 2 {
+            if !(set.contains(&down_left) || set.contains(&left) || set.contains(&up_left)) {
+                return Some(Direction::Left);
+            }
+        }
 
-    let right = Position {
-        x: pos.x + 1,
-        y: pos.y,
-    };
-    if !(set.contains(&down_right) || set.contains(&right) || set.contains(&up_right)) {
-        return Some(Direction::Right);
+        let right = Position {
+            x: pos.x + 1,
+            y: pos.y,
+        };
+        if (i + round) % 4 == 3 {
+            if !(set.contains(&down_right) || set.contains(&right) || set.contains(&up_right)) {
+                return Some(Direction::Right);
+            }
+        }
     }
-
     None
 }
 
@@ -438,25 +448,25 @@ mod tests {
         let pos = Position { x: 0, y: 0 };
         let mut set = HashSet::new();
         // empty / default
-        assert_eq!(Some(Direction::Up), empty_direction(pos, &set));
+        assert_eq!(Some(Direction::Up), empty_direction(pos, &set, 0));
 
         // up with some neighbour
         set.insert(Position { x: 1, y: 0 });
-        assert_eq!(Some(Direction::Up), empty_direction(pos, &set));
+        assert_eq!(Some(Direction::Up), empty_direction(pos, &set, 0));
         // down when up blocked
         set.insert(Position { x: 1, y: -1 });
-        assert_eq!(Some(Direction::Down), empty_direction(pos, &set));
+        assert_eq!(Some(Direction::Down), empty_direction(pos, &set, 0));
         // left
         set.insert(Position { x: 1, y: 1 });
-        assert_eq!(Some(Direction::Left), empty_direction(pos, &set));
+        assert_eq!(Some(Direction::Left), empty_direction(pos, &set, 0));
         // none if all blocked
         set.insert(Position { x: -1, y: 1 });
-        assert_eq!(None, empty_direction(pos, &set));
+        assert_eq!(None, empty_direction(pos, &set, 0));
 
         // right as last resort
         let mut set = HashSet::new();
         set.insert(Position { x: -1, y: -1 });
         set.insert(Position { x: 0, y: 1 });
-        assert_eq!(Some(Direction::Right), empty_direction(pos, &set));
+        assert_eq!(Some(Direction::Right), empty_direction(pos, &set, 0));
     }
 }
