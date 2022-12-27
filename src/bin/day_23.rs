@@ -7,6 +7,7 @@ fn main() {
     let input = fs::read_to_string("./inputs/day_23_input.txt").unwrap();
 
     println!("{}", part_1(&input));
+    println!("{}", part_2(&input));
 }
 
 fn part_1(input: &str) -> u32 {
@@ -43,28 +44,9 @@ fn part_1(input: &str) -> u32 {
     // hashmap<pos, count> collisions
     //
 
-    let mut elves = Vec::new();
+    let mut elves = parse_elves(input);
 
-    // parse
-    for (h, line) in input.lines().enumerate() {
-        let split: Vec<&str> = line.split("").collect();
-        // println!("split: {:?}", split);
-
-        // "", ".", "#", ".", ""
-        // blank at start and end
-        // skip the first one and the last one doesn't matter (it doesn't match #)
-        for (w, s) in split.iter().skip(1).enumerate() {
-            if s == &"#" {
-                let pos = Position {
-                    x: w as i32,
-                    y: h as i32,
-                };
-                let elf = Elf { pos };
-                elves.push(elf);
-                // println!("elf at {:?}", pos);
-            }
-        }
-    }
+    
 
     // println!("Elves: {:#?}", &elves[1]);
     println!("Start");
@@ -176,6 +158,128 @@ fn part_1(input: &str) -> u32 {
     display_elves(&elves);
 
     height as u32 * width as u32 - (elves.len() as u32)
+}
+
+fn part_2(input: &str) -> u32 {
+    // get the first round where 0 elves move
+
+    let mut elves = parse_elves(input);
+
+    let mut round = 0;
+    loop {
+        round += 1;
+
+        let set = calc_elf_positions(&elves);
+        let mut propose_move: HashMap<Position, u32> = HashMap::new();
+        let mut my_move: HashMap<Position, Position> = HashMap::new();
+
+        for e in &elves {
+            // check if any elves nearby
+            if any_nearby_elves(e.pos, &set) {
+                // check above
+                // then below, etc
+                let open_dir = empty_direction(e.pos, &set, round-1);
+                match open_dir {
+                    Some(Direction::Up) => {
+                        let up = Position {
+                            x: e.pos.x,
+                            y: e.pos.y - 1,
+                        };
+                        let hit = propose_move.get(&up);
+                        if let Some(hit) = hit {
+                            propose_move.insert(up, hit + 1);
+                        } else {
+                            propose_move.insert(up, 1);
+                            my_move.insert(e.pos, up);
+                        }
+                    }
+                    Some(Direction::Down) => {
+                        let down = Position {
+                            x: e.pos.x,
+                            y: e.pos.y + 1,
+                        };
+                        let hit = propose_move.get(&down);
+                        if let Some(hit) = hit {
+                            propose_move.insert(down, hit + 1);
+                        } else {
+                            propose_move.insert(down, 1);
+                            my_move.insert(e.pos, down);
+                        }
+                    }
+                    Some(Direction::Left) => {
+                        let left = Position {
+                            x: e.pos.x - 1,
+                            y: e.pos.y,
+                        };
+                        let hit = propose_move.get(&left);
+                        if let Some(hit) = hit {
+                            propose_move.insert(left, hit + 1);
+                        } else {
+                            propose_move.insert(left, 1);
+                            my_move.insert(e.pos, left);
+                        }
+                    }
+                    Some(Direction::Right) => {
+                        let right = Position {
+                            x: e.pos.x + 1,
+                            y: e.pos.y,
+                        };
+                        let hit = propose_move.get(&right);
+                        if let Some(hit) = hit {
+                            propose_move.insert(right, hit + 1);
+                        } else {
+                            propose_move.insert(right, 1);
+                            my_move.insert(e.pos, right);
+                        }
+                    }
+                    None => {
+                        // println!("Blocked in");
+                    }
+                }
+            }
+        }
+        let mut moved = false;
+        for e in elves.iter_mut() {
+            let new_pos = my_move.get(&e.pos);
+            if let Some(new_pos) = new_pos {
+                if let Some(&count) = propose_move.get(&new_pos) {
+                    // println!("count: {:?}", count);
+                    if count == 1 {
+                        // *e.pos = new_pos;
+                        *e = Elf { pos: *new_pos };
+                        moved = true;
+                    }
+                }
+            }
+        }
+        if !moved {
+            return round;
+        }
+    }
+}
+
+fn parse_elves(input: &str) -> Vec<Elf> {
+    let mut elves = Vec::new();
+    for (h, line) in input.lines().enumerate() {
+        let split: Vec<&str> = line.split("").collect();
+        // println!("split: {:?}", split);
+
+        // "", ".", "#", ".", ""
+        // blank at start and end
+        // skip the first one and the last one doesn't matter (it doesn't match #)
+        for (w, s) in split.iter().skip(1).enumerate() {
+            if s == &"#" {
+                let pos = Position {
+                    x: w as i32,
+                    y: h as i32,
+                };
+                let elf = Elf { pos };
+                elves.push(elf);
+                // println!("elf at {:?}", pos);
+            }
+        }
+    }
+    elves
 }
 
 fn display_elves(elves: &Vec<Elf>) {
@@ -395,6 +499,11 @@ mod tests {
     #[test]
     fn part_1_works() {
         assert_eq!(110, part_1(&BASIC_INPUT_DAY_23));
+    }
+
+    #[test]
+    fn part_2_works() {
+        assert_eq!(20, part_2(&BASIC_INPUT_DAY_23));
     }
 
     #[test]
