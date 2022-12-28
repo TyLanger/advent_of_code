@@ -1,9 +1,16 @@
-use std::{fs, collections::{HashSet, HashMap}};
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::Display,
+    fs,
+};
 
 fn main() {
     let input = fs::read_to_string("./inputs/day_24_input.txt").unwrap();
 
+    // 175 is too low
+    // 301 is correct
     println!("{}", part_1(&input));
+    println!("{}", part_2(&input));
 }
 
 fn part_1(input: &str) -> u32 {
@@ -93,21 +100,204 @@ fn part_1(input: &str) -> u32 {
     // println!("Blizzards: {:?}", blizzards);
     draw_blizzards(&blizzards, width, height);
 
-    for m in 1..=18 {
+    let mut expedition_positions = HashSet::new();
+    expedition_positions.insert(Position { x: 0, y: -1 }); // starting pos
+    let end = Position {
+        x: width as i32 - 1,
+        y: height as i32,
+    };
+    println!("Looking for {}", end);
+
+    let mut m = 0;
+    loop {
+        m += 1;
+        println!();
         println!("Minute {}", m);
         simulate(&mut blizzards, width as u32, height as u32);
         draw_blizzards(&blizzards, width, height);
-    }
-    
+        expedition_positions =
+            get_possible_positions(&blizzards, &expedition_positions, width, height);
+        draw_possibilities(&expedition_positions, width, height);
 
+        println!("Possible position count: {:?}", expedition_positions.len());
+        // println!("{}", expedition_positions);
+        // println!("{}", format!("{:?}", expedition_positions));
+        // for pos in &expedition_positions {
+        //     print!("{}, ", pos);
+        // }
+        // println!();
+
+        if expedition_positions.contains(&end) {
+            println!("Found end at minute: {:?}", m);
+            println!("Looking for {}", end);
+            return m;
+        }
+    }
+}
+
+fn part_2(input: &str) -> u32 {
+    // do part 1
+    // then clear possible positions
+    // sim for start
+    // clear
+    // sim for end
+
+    let mut width = 0;
+    let mut height = 0;
+
+    let mut blizzards = Vec::new();
+
+    for (i, line) in input.lines().skip(1).enumerate() {
+        let split: Vec<&str> = line.split("").skip(1).collect();
+        // println!("split: {:?}", split);
+
+        // skip the wall
+        for (j, &s) in split.iter().skip(1).enumerate() {
+            let mut direction = Direction::Up;
+            match s {
+                "#" => {
+                    continue;
+                }
+                "." => {
+                    continue;
+                }
+                ">" => {
+                    direction = Direction::Right;
+                }
+                "<" => {
+                    direction = Direction::Left;
+                }
+                "v" => {
+                    direction = Direction::Down;
+                }
+                "^" => {
+                    direction = Direction::Up;
+                }
+                _ => {
+                    continue;
+                }
+            }
+
+            let position = Position {
+                x: j as i32,
+                y: i as i32,
+            };
+
+            let blizz = Blizzard {
+                direction,
+                position,
+            };
+            blizzards.push(blizz);
+        }
+
+        width = split.len() - 1;
+        height = i;
+    }
+    width -= 2;
+    // exclude the # walls
+    println!("Size: w: {}, h: {}", width, height);
+
+    // println!("Blizzards: {:?}", blizzards);
+    draw_blizzards(&blizzards, width, height);
+
+    let mut expedition_positions = HashSet::new();
+    expedition_positions.insert(Position { x: 0, y: -1 }); // starting pos
+    let end = Position {
+        x: width as i32 - 1,
+        y: height as i32,
+    };
+    println!("Looking for {}", end);
+
+    let mut m = 0;
+    loop {
+        m += 1;
+        println!();
+        println!("Minute {}", m);
+        simulate(&mut blizzards, width as u32, height as u32);
+        draw_blizzards(&blizzards, width, height);
+        expedition_positions =
+            get_possible_positions(&blizzards, &expedition_positions, width, height);
+        draw_possibilities(&expedition_positions, width, height);
+
+        println!("Possible position count: {:?}", expedition_positions.len());
+        // println!("{}", expedition_positions);
+        // println!("{}", format!("{:?}", expedition_positions));
+        // for pos in &expedition_positions {
+        //     print!("{}, ", pos);
+        // }
+        // println!();
+
+        if expedition_positions.contains(&end) {
+            println!("Found end at minute: {:?}", m);
+            println!("Looking for {}", end);
+            // return m;
+            break;
+        }
+    }
+
+    let start = Position { x: 0, y: -1 };
+    expedition_positions.clear();
+    expedition_positions.insert(start);
+
+    let mut back_to_start = 0;
+    loop {
+        back_to_start += 1;
+    }
 
     99
+}
+
+fn get_possible_positions(
+    blizzards: &Vec<Blizzard>,
+    expedition_positions: &HashSet<Position>,
+    width: usize,
+    height: usize,
+) -> HashSet<Position> {
+    let mut set = HashSet::new();
+
+    let blizz_set = get_blizzard_pos_set(blizzards);
+
+    for p in expedition_positions {
+        // check neighbours
+        // are they blizzards?
+        if !blizz_set.contains(p) {
+            set.insert(*p);
+        }
+        for n in p.get_neighbours() {
+            if n.x < 0 || n.x >= width as i32 || n.y < 0 || n.y >= height as i32 {
+                // out of bounds
+
+                // end is width -1, height
+                if n.x == (width as i32 - 1) && n.y == height as i32 {
+                    set.insert(n);
+                    return set;
+                }
+                continue;
+            }
+
+            if !blizz_set.contains(&n) {
+                set.insert(n);
+            }
+        }
+    }
+
+    set
 }
 
 fn simulate(blizzards: &mut Vec<Blizzard>, width: u32, height: u32) {
     for b in blizzards {
         b.sim(width, height);
     }
+}
+
+fn get_blizzard_pos_set(blizzards: &Vec<Blizzard>) -> HashSet<Position> {
+    let mut set = HashSet::new();
+
+    for b in blizzards {
+        set.insert(b.position);
+    }
+
+    set
 }
 
 fn get_blizzard_map(blizzards: &Vec<Blizzard>) -> HashMap<Position, BlizzardDisplay> {
@@ -118,7 +308,7 @@ fn get_blizzard_map(blizzards: &Vec<Blizzard>) -> HashMap<Position, BlizzardDisp
         if let Some(display) = get {
             let count = match display {
                 BlizzardDisplay::Direction(_) => 2,
-                BlizzardDisplay::Count(n) => n+1,
+                BlizzardDisplay::Count(n) => n + 1,
             };
             map.insert(b.position, BlizzardDisplay::Count(count));
         } else {
@@ -129,23 +319,41 @@ fn get_blizzard_map(blizzards: &Vec<Blizzard>) -> HashMap<Position, BlizzardDisp
     map
 }
 
+fn draw_possibilities(positions: &HashSet<Position>, width: usize, height: usize) {
+    println!("E");
+    for j in 0..height {
+        for i in 0..width {
+            let p = Position {
+                x: i as i32,
+                y: j as i32,
+            };
+            if positions.contains(&p) {
+                print!("E");
+            } else {
+                print!(".");
+            }
+        }
+        println!();
+    }
+}
+
 fn draw_blizzards(blizzards: &Vec<Blizzard>, width: usize, height: usize) {
     let map = get_blizzard_map(blizzards);
 
     println!("S");
     for j in 0..height {
-
         for i in 0..width {
-            let p = &Position { x: i as i32, y: j as i32};
+            let p = &Position {
+                x: i as i32,
+                y: j as i32,
+            };
             if let Some(display) = map.get(p) {
                 match display {
-                    BlizzardDisplay::Direction(d) => {
-                        match d {
-                            Direction::Up => print!("^"),
-                            Direction::Down => print!("v"),
-                            Direction::Right => print!(">"),
-                            Direction::Left => print!("<"),
-                        }
+                    BlizzardDisplay::Direction(d) => match d {
+                        Direction::Up => print!("^"),
+                        Direction::Down => print!("v"),
+                        Direction::Right => print!(">"),
+                        Direction::Left => print!("<"),
                     },
                     BlizzardDisplay::Count(n) => print!("{:?}", n),
                 }
@@ -155,7 +363,7 @@ fn draw_blizzards(blizzards: &Vec<Blizzard>, width: usize, height: usize) {
         }
         println!();
     }
-    for _ in 0..(width-1) {
+    for _ in 0..(width - 1) {
         print!(" ");
     }
     println!("E");
@@ -178,22 +386,30 @@ impl Blizzard {
         match self.direction {
             Direction::Up => {
                 let other = Position { x: 0, y: -1 };
-                let new_pos = self.position.add_wrapped(other, width as i32, height as i32);
+                let new_pos = self
+                    .position
+                    .add_wrapped(other, width as i32, height as i32);
                 self.position = new_pos;
             }
             Direction::Down => {
                 let other = Position { x: 0, y: 1 };
-                let new_pos = self.position.add_wrapped(other, width as i32, height as i32);
+                let new_pos = self
+                    .position
+                    .add_wrapped(other, width as i32, height as i32);
                 self.position = new_pos;
             }
             Direction::Right => {
                 let other = Position { x: 1, y: 0 };
-                let new_pos = self.position.add_wrapped(other, width as i32, height as i32);
+                let new_pos = self
+                    .position
+                    .add_wrapped(other, width as i32, height as i32);
                 self.position = new_pos;
             }
             Direction::Left => {
                 let other = Position { x: -1, y: 0 };
-                let new_pos = self.position.add_wrapped(other, width as i32, height as i32);
+                let new_pos = self
+                    .position
+                    .add_wrapped(other, width as i32, height as i32);
                 self.position = new_pos;
             }
         }
@@ -217,6 +433,35 @@ impl Position {
         let y = (self.y + other.y).rem_euclid(height);
 
         Position { x, y }
+    }
+
+    fn get_neighbours(&self) -> Vec<Self> {
+        let mut v = Vec::new();
+
+        v.push(Position {
+            x: self.x,
+            y: self.y + 1,
+        });
+        v.push(Position {
+            x: self.x,
+            y: self.y - 1,
+        });
+        v.push(Position {
+            x: self.x + 1,
+            y: self.y,
+        });
+        v.push(Position {
+            x: self.x - 1,
+            y: self.y,
+        });
+
+        v
+    }
+}
+
+impl Display for Position {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
     }
 }
 
@@ -243,6 +488,11 @@ mod tests {
     #[test]
     fn part_1_works() {
         assert_eq!(18, part_1(&BASIC_INPUT_DAY_24));
+    }
+
+    #[test]
+    fn part_2_works() {
+        assert_eq!(54, part_2(&BASIC_INPUT_DAY_24));
     }
 
     #[test]
