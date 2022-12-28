@@ -9,8 +9,8 @@ fn main() {
 
     // 175 is too low
     // 301 is correct
-    println!("{}", part_1(&input));
-    println!("{}", part_2(&input));
+    // println!("{}", part_1(&input));
+    println!("{}", part_2(&input)); // 859
 }
 
 fn part_1(input: &str) -> u32 {
@@ -199,13 +199,16 @@ fn part_2(input: &str) -> u32 {
 
     // println!("Blizzards: {:?}", blizzards);
     draw_blizzards(&blizzards, width, height);
-
-    let mut expedition_positions = HashSet::new();
-    expedition_positions.insert(Position { x: 0, y: -1 }); // starting pos
+    let start = Position { x: 0, y: -1 };
     let end = Position {
         x: width as i32 - 1,
         y: height as i32,
     };
+
+
+    let mut expedition_positions = HashSet::new();
+    expedition_positions.insert(start); // starting pos
+    
     println!("Looking for {}", end);
 
     let mut m = 0;
@@ -235,16 +238,62 @@ fn part_2(input: &str) -> u32 {
         }
     }
 
-    let start = Position { x: 0, y: -1 };
     expedition_positions.clear();
-    expedition_positions.insert(start);
+    expedition_positions.insert(end);
 
     let mut back_to_start = 0;
     loop {
         back_to_start += 1;
+        println!();
+        println!("Minute {}", back_to_start);
+        simulate(&mut blizzards, width as u32, height as u32);
+        draw_blizzards(&blizzards, width, height);
+
+        expedition_positions =
+            get_possible_positions_reverse(&blizzards, &expedition_positions, width, height);
+        draw_possibilities(&expedition_positions, width, height);
+        println!("Possible position count: {:?}", expedition_positions.len());
+
+        if expedition_positions.contains(&start) {
+            println!("Found start at minute: {:?}", back_to_start);
+            println!("Looking for {}", start);
+            // return m;
+            break;
+        }
+
     }
 
-    99
+    expedition_positions.clear();
+    expedition_positions.insert(start);
+
+    let mut back_to_end = 0;
+    loop {
+        back_to_end += 1;
+        println!();
+        println!("Minute {}", back_to_end);
+        simulate(&mut blizzards, width as u32, height as u32);
+        draw_blizzards(&blizzards, width, height);
+        expedition_positions =
+            get_possible_positions(&blizzards, &expedition_positions, width, height);
+        draw_possibilities(&expedition_positions, width, height);
+
+        println!("Possible position count: {:?}", expedition_positions.len());
+        // println!("{}", expedition_positions);
+        // println!("{}", format!("{:?}", expedition_positions));
+        // for pos in &expedition_positions {
+        //     print!("{}, ", pos);
+        // }
+        // println!();
+
+        if expedition_positions.contains(&end) {
+            println!("Found end end at minute: {:?}", back_to_end);
+            println!("Looking for {}", end);
+            // return m;
+            break;
+        }
+    }
+
+    m + back_to_start + back_to_end
 }
 
 fn get_possible_positions(
@@ -272,6 +321,53 @@ fn get_possible_positions(
                     set.insert(n);
                     return set;
                 }
+                continue;
+            }
+
+            if !blizz_set.contains(&n) {
+                set.insert(n);
+            }
+        }
+    }
+
+    set
+}
+
+// lazy solution
+// same as the normal
+// but short circuits at start(0,-1) instead of end(5,4)
+fn get_possible_positions_reverse(
+    blizzards: &Vec<Blizzard>,
+    expedition_positions: &HashSet<Position>,
+    width: usize,
+    height: usize,
+) -> HashSet<Position> {
+    let mut set = HashSet::new();
+
+    let blizz_set = get_blizzard_pos_set(blizzards);
+
+    for p in expedition_positions {
+        // check neighbours
+        // are they blizzards?
+        if !blizz_set.contains(p) {
+            set.insert(*p);
+        }
+        for n in p.get_neighbours() {
+            if n.x < 0 || n.x >= width as i32 || n.y < 0 || n.y >= height as i32 {
+                // out of bounds
+
+                // end is width -1, height
+                // if n.x == (width as i32 - 1) && n.y == height as i32 {
+                //     set.insert(n);
+                //     return set;
+                // }
+                // start is 0, -1
+                if n.x == 0 && n.y == -1 {
+                    set.insert(n);
+                    return set;
+                }
+                
+
                 continue;
             }
 
