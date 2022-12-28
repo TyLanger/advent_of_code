@@ -46,8 +46,6 @@ fn part_1(input: &str) -> u32 {
 
     let mut elves = parse_elves(input);
 
-    
-
     // println!("Elves: {:#?}", &elves[1]);
     println!("Start");
     display_elves(&elves);
@@ -178,7 +176,7 @@ fn part_2(input: &str) -> u32 {
             if any_nearby_elves(e.pos, &set) {
                 // check above
                 // then below, etc
-                let open_dir = empty_direction(e.pos, &set, round-1);
+                let open_dir = empty_direction(e.pos, &set, round - 1);
                 match open_dir {
                     Some(Direction::Up) => {
                         let up = Position {
