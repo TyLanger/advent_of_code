@@ -9,7 +9,7 @@ fn main() {
 
     // 175 is too low
     // 301 is correct
-    // println!("{}", part_1(&input));
+    println!("{}", part_1(&input));
     println!("{}", part_2(&input)); // 859
 }
 
@@ -53,7 +53,7 @@ fn part_1(input: &str) -> u32 {
 
         // skip the wall
         for (j, &s) in split.iter().skip(1).enumerate() {
-            let mut direction = Direction::Up;
+            let direction;
             match s {
                 "#" => {
                     continue;
@@ -153,7 +153,7 @@ fn part_2(input: &str) -> u32 {
 
         // skip the wall
         for (j, &s) in split.iter().skip(1).enumerate() {
-            let mut direction = Direction::Up;
+            let direction;
             match s {
                 "#" => {
                     continue;
@@ -205,10 +205,9 @@ fn part_2(input: &str) -> u32 {
         y: height as i32,
     };
 
-
     let mut expedition_positions = HashSet::new();
     expedition_positions.insert(start); // starting pos
-    
+
     println!("Looking for {}", end);
 
     let mut m = 0;
@@ -260,7 +259,6 @@ fn part_2(input: &str) -> u32 {
             // return m;
             break;
         }
-
     }
 
     expedition_positions.clear();
@@ -366,7 +364,6 @@ fn get_possible_positions_reverse(
                     set.insert(n);
                     return set;
                 }
-                
 
                 continue;
             }
@@ -519,11 +516,6 @@ struct Position {
 }
 
 impl Position {
-    fn add(&mut self, other: Position) {
-        self.x = self.x + other.x;
-        self.y = self.y + other.y;
-    }
-
     fn add_wrapped(&self, other: Position, width: i32, height: i32) -> Self {
         let x = (self.x + other.x).rem_euclid(width);
         let y = (self.y + other.y).rem_euclid(height);
